@@ -96,30 +96,3 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-
-## Работа с API
-
-### Загрузка путевого листа (документа)
-**Эндпоинт:** `POST /documents/upload`
-
-**Формат запроса:** `multipart/form-data`
-
-**Параметры (form-data):**
-- `file` *(обязательный)*: Файл путевого листа (форматы: .jpg, .png, .pdf, .heic).
-- `description` *(необязательный)*: Текстовое описание к загружаемому файлу.
-
-**Пример успешного ответа:**
-```json
-{
-  "message": "Файл успешно загружен",
-  "document": {
-    "id": 1716710400000,
-    "filename": "waybill-1716710400000-123456789.pdf",
-    "originalName": "my-document.pdf",
-    "path": "uploads/waybill-1716710400000-123456789.pdf",
-    "size": 102400,
-    "description": "Путевой лист",
-    "status": "Ожидает обработки",
-    "uploadedAt": "2026-05-26T10:00:00.000Z"
-  }
-}
