@@ -4,8 +4,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 interface User {
   id: string
   email: string
-  name?: string
-  role?: string
+  name: string
+  role: string
+  company: string
 }
 
 interface AuthContextType {
@@ -15,23 +16,36 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
-  setUser: (user: User | null) => void
 }
 
-// Создаем контекст
+// Mock-данные пользователей
+const mockUsers = [
+  {
+    id: '1',
+    email: 'demo@company.ru',
+    password: '123456',
+    name: 'Иван Иванов',
+    role: 'admin',
+    company: 'Транспортная компания'
+  },
+  {
+    id: '2',
+    email: 'user@company.ru',
+    password: '123456',
+    name: 'Петр Петров',
+    role: 'user',
+    company: 'Транспортная компания'
+  }
+]
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Провайдер
-interface AuthProviderProps {
-  children: ReactNode
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  // При загрузке приложения проверяем localStorage
+  // При загрузке проверяем localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token')
     const storedUser = localStorage.getItem('auth_user')
@@ -43,36 +57,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false)
   }, [])
 
-  // Функция входа
+  // Функция входа с mock-данными
   const login = async (email: string, password: string) => {
     setIsLoading(true)
-    try {
-      // Здесь будет реальный API запрос
-      // const response = await api.post('/auth/login', { email, password })
-      // const { token, user } = response.data
-      
-      // Временная заглушка для тестирования
-      // Удалить после подключения к реальному API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Проверка для демо (удалить позже)
-      if (email === 'demo@company.ru' && password === '123456') {
-        const mockUser = { id: '1', email, name: 'Пользователь', role: 'user' }
-        const mockToken = 'mock_jwt_token_' + Date.now()
-        
-        setToken(mockToken)
-        setUser(mockUser)
-        localStorage.setItem('auth_token', mockToken)
-        localStorage.setItem('auth_user', JSON.stringify(mockUser))
-      } else {
-        throw new Error('Неверный email или пароль')
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-      throw error
-    } finally {
+    
+    // Имитируем задержку сети
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Ищем пользователя в mock-данных
+    const foundUser = mockUsers.find(u => u.email === email && u.password === password)
+    
+    if (!foundUser) {
       setIsLoading(false)
+      throw new Error('Неверный email или пароль')
     }
+    
+    // Создаем токен (в реальном проекте его дает сервер)
+    const mockToken = 'mock_jwt_token_' + Date.now() + '_' + foundUser.id
+    
+    // Сохраняем данные пользователя (без пароля)
+    const userData: User = {
+      id: foundUser.id,
+      email: foundUser.email,
+      name: foundUser.name,
+      role: foundUser.role,
+      company: foundUser.company
+    }
+    
+    setToken(mockToken)
+    setUser(userData)
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('auth_token', mockToken)
+    localStorage.setItem('auth_user', JSON.stringify(userData))
+    
+    setIsLoading(false)
   }
 
   // Функция выхода
@@ -90,7 +109,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
-    setUser,
   }
 
   return (
@@ -100,7 +118,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   )
 }
 
-// Хук для использования контекста
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (context === undefined) {

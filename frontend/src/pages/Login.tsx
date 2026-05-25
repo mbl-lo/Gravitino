@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 function Login() {
@@ -8,7 +8,15 @@ function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const { login } = useAuth()
+  const { login, isAuthenticated } = useAuth()
+
+  // Если уже авторизован - перенаправляем
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Перенаправление на страницу приложения
+      window.location.href = '/app'
+    }
+  }, [isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,9 +25,7 @@ function Login() {
 
     try {
       await login(email, password)
-      // После успешного входа перенаправление на главную страницу
-      // window.location.href = '/dashboard'
-      console.log('Login successful!')
+      // После успешного входа useEffect сработает и перенаправит
     } catch (err: any) {
       setError(err.message || 'Ошибка при входе в систему')
     } finally {
@@ -28,53 +34,99 @@ function Login() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       
-      {/* Левая колонка - синий фон на всю высоту */}
-      <div className="w-full md:w-1/2 bg-blue-700 flex flex-col justify-center items-center text-center p-8 lg:p-12">
-        <div className="mb-8">
-          <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm mx-auto">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Левая колонка - синий фон */}
+      <div style={{ 
+        width: '50%', 
+        backgroundColor: '#1d4ed8',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{
+            width: '96px',
+            height: '96px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto'
+          }}>
+            <svg style={{ width: '48px', height: '48px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         </div>
         
-        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
           Автоматизация обработки <br /> путевых листов
         </h2>
-        <p className="text-blue-100 text-base lg:text-lg">
+        <p style={{ color: '#bfdbfe', fontSize: '1rem' }}>
           ИИ-распознавание, валидация данных и контроль аномалий <br /> для транспортных компаний
         </p>
       </div>
 
-      {/* Правая колонка - серый фон с карточкой по центру */}
-      <div className="w-full md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-          <div className="text-left mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      {/* Правая колонка - серый фон с карточкой */}
+      <div style={{ 
+        width: '50%', 
+        backgroundColor: '#f3f4f6',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+          padding: '2rem',
+          width: '100%',
+          maxWidth: '28rem'
+        }}>
+          <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
+            <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
               Цифровой архив
             </h1>
-            <p className="text-sm text-gray-600">
+            <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
               ИИ-распознавание и контроль путевых листов
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+            <div style={{
+              marginBottom: '1rem',
+              padding: '0.75rem',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              borderRadius: '8px'
+            }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2 text-left">
+              <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem', textAlign: 'left' }}>
                 Электронная почта
               </label>
               <input
                 id="email"
                 type="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  outline: 'none'
+                }}
                 placeholder="example@company.ru"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -84,13 +136,19 @@ function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2 text-left">
+              <label htmlFor="password" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem', textAlign: 'left' }}>
                 Пароль
               </label>
               <input
                 id="password"
                 type="password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  outline: 'none'
+                }}
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -99,18 +157,18 @@ function Login() {
               />
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  style={{ width: '1rem', height: '1rem' }}
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={loading}
                 />
-                <span className="text-gray-700 select-none">Запомнить меня</span>
+                <span style={{ color: '#374151' }}>Запомнить меня</span>
               </label>
-              <a href="#" className="text-blue-600 hover:text-blue-700 transition duration-200">
+              <a href="#" style={{ color: '#2563eb', textDecoration: 'none' }}>
                 Забыли пароль?
               </a>
             </div>
@@ -118,22 +176,31 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                width: '100%',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                fontWeight: '600',
+                padding: '0.625rem',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
             >
               {loading ? 'Вход...' : 'Войти в систему'}
             </button>
           </form>
 
-          <div className="border-t border-gray-200 my-6"></div>
+          <div style={{ borderTop: '1px solid #e5e7eb', margin: '1.5rem 0' }}></div>
 
-          <div className="text-center">
-            <p className="text-xs text-gray-500">
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
               Доступ только для сотрудников организации
             </p>
           </div>
 
-          {/* Временная подсказка для тестирования (удалить позже) */}
-          <div className="mt-4 p-2 bg-gray-50 rounded text-xs text-gray-400 text-center">
+          <div style={{ marginTop: '1rem', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '8px', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center' }}>
             Тестовые данные: demo@company.ru / 123456
           </div>
         </div>
