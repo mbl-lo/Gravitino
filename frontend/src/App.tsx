@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Layout from './components/Layout/Layout'
+import PlaceholderPage from './components/PlaceholderPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -23,7 +24,6 @@ function AppRoutes() {
         isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
       } />
       
-      {/* Все защищённые страницы обёрнуты в Layout */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
@@ -32,49 +32,81 @@ function AppRoutes() {
       
       <Route path="/upload" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>📤 Загрузка документов (в разработке)</div>
+          <PlaceholderPage 
+            title="Загрузка документов" 
+            icon="📤"
+            description="Загрузка и распознавание путевых листов"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/queue" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>⏳ Очередь обработки (в разработке)</div>
+          <PlaceholderPage 
+            title="Очередь обработки" 
+            icon="⏳"
+            description="Документы, ожидающие обработки"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/archive" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>📁 Архив путевых листов (в разработке)</div>
+          <PlaceholderPage 
+            title="Архив путевых листов" 
+            icon="📁"
+            description="Все обработанные документы"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/anomalies" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>⚠️ Аномалии (в разработке)</div>
+          <PlaceholderPage 
+            title="Аномалии" 
+            icon="⚠️"
+            description="Документы, требующие проверки"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/export" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>📎 Экспорт и интеграции (в разработке)</div>
+          <PlaceholderPage 
+            title="Экспорт и интеграции" 
+            icon="📎"
+            description="Выгрузка данных и интеграция с системами"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/training" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>🎓 Обучающие данные (в разработке)</div>
+          <PlaceholderPage 
+            title="Обучающие данные" 
+            icon="🎓"
+            description="Наборы данных для обучения ИИ"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/settings" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>⚙️ Настройки (в разработке)</div>
+          <PlaceholderPage 
+            title="Настройки" 
+            icon="⚙️"
+            description="Настройки системы и параметры работы"
+          />
         </ProtectedRoute>
       } />
       
       <Route path="/users" element={
         <ProtectedRoute>
-          <div style={{ padding: '24px' }}>👥 Пользователи (в разработке)</div>
+          <PlaceholderPage 
+            title="Пользователи" 
+            icon="👥"
+            description="Управление пользователями системы"
+          />
         </ProtectedRoute>
       } />
     </Routes>
