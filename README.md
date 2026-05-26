@@ -126,22 +126,108 @@ Response:
 
 Параметры:
 - `file` *(обязательный)*: файл (.jpg, .png, .pdf, .heic)
-- `description` *(необязательный)*: описание
+- `uploadedById` *(обязательный)*: id пользователя
 
 Пример успешного ответа:
 ```json
 {
-  "message": "Файл успешно загружен",
-  "document": {
-    "id": 1779722907348,
-    "filename": "1779722907334-93392284.JPG",
-    "originalname": "_MG_9210.JPG",
-    "path": "uploads/1779722907334-93392284.JPG",
-    "size": 2799749,
-    "status": "Ожидает обработки",
-    "uploadedAt": "2026-05-25T15:28:27.348Z"
-  }
+    "id": "f7a46c2a-87b3-4f92-90aa-0ab80113f98c",
+    "uploadedById": "33333333-3333-4333-8333-333333333334",
+    "driverId": null,
+    "vehicleId": null,
+    "documentNumber": null,
+    "tripDate": null,
+    "originalFileUrl": "uploads\\1779809682333-288146754.JPG",
+    "originalFileName": "_MG_9210.JPG",
+    "fileMimeType": "image/jpeg",
+    "fileSize": 2799749,
+    "status": "uploaded",
+    "ocrStatus": "pending",
+    "ocrConfidence": null,
+    "hasAnomalies": false,
+    "confirmedAt": null,
+    "confirmedById": null,
+    "createdAt": "2026-05-26T15:34:42.356Z",
+    "updatedAt": "2026-05-26T15:34:42.356Z"
 }
+```
+
+### Получение списка пользователей
+**GET** `/users`
+
+Пример успешного ответа:
+```json
+[
+  {
+    "id": "clw7y2z1a0000tr98x7v1p9l2",
+    "email": "operator.ivanov@company.ru",
+    "name": "Иванов Иван Иванович",
+    "role": "OPERATOR",
+    "createdAt": "2026-05-26T10:00:00.000Z"
+  },
+  ...
+]
+```
+
+### Создание нового пользователя
+**POST** `/users` — `application/json`
+
+Параметры:
+
+- `email` *(обязательный)*: строка
+- `password` *(обязательный)*: строка
+- `name` *(обязательный)*: строка
+- `role` *(обязательный)*: строка
+
+Пример успешного ответа:
+```json
+{
+  "id": "clw8z3m2b0001tr98x7v2q0m3",
+  "email": "demo@company.ru",
+  "name": "Алексеева Анна Сергеевна",
+  "role": "OPERATOR",
+  "createdAt": "2026-05-26T15:20:00.000Z"
+}
+```
+
+### Просмотр / Скачивание бинарного файла документа
+**GET** `/documents/:id/file`
+
+Параметры:
+
+- `id` *(обязательный)*: UUID документа в базе данных
+
+Пример успешного ответа:
+Бинарный поток файла
+
+### Получение списка документов
+**GET** `/documents` — `application/json`
+
+Пример успешного ответа:
+```json
+[
+    {
+        "id": "1c3f1904-aff7-4356-acef-8fc045417b84",
+        "uploadedById": "33333333-3333-4333-8333-333333333334",
+        "driverId": null,
+        "vehicleId": null,
+        "documentNumber": null,
+        "tripDate": null,
+        "originalFileUrl": "uploads\\1779809822931-908928842.JPG",
+        "originalFileName": "_MG_9210.JPG",
+        "fileMimeType": "image/jpeg",
+        "fileSize": 2799749,
+        "status": "uploaded",
+        "ocrStatus": "pending",
+        "ocrConfidence": null,
+        "hasAnomalies": false,
+        "confirmedAt": null,
+        "confirmedById": null,
+        "createdAt": "2026-05-26T15:37:02.957Z",
+        "updatedAt": "2026-05-26T15:37:02.957Z"
+    },
+    ...
+]
 ```
 
 ### Ошибки
