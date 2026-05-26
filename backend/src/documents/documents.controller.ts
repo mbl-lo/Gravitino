@@ -1,17 +1,22 @@
 import {
   Controller,
+  Get,
   Post,
+  Param,
+  NotFoundException,
+  StreamableFile,
+  Res,
   UseInterceptors,
   UploadedFile,
   Body,
-  Get,
   BadRequestException,
-  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { DocumentsService } from './documents.service';
+import { createReadStream, existsSync } from 'fs';
+import { join, extname } from 'path';
+import { Response } from 'express';
+import { diskStorage } from 'multer';
 import { OcrService } from './ocr.service';
 
 @Controller('documents')
@@ -20,6 +25,11 @@ export class DocumentsController {
     private readonly documentsService: DocumentsService,
     private readonly ocrService: OcrService,
   ) {}
+
+  @Get()
+  async findAll() {
+    return this.documentsService.findAll();
+  }
 
   @Post('upload')
   @UseInterceptors(
@@ -55,12 +65,12 @@ export class DocumentsController {
       },
     }),
   )
-  upload(@UploadedFile() file: Express.Multer.File) {
+  upload(@UploadedFile() file: any, @Body() body: any) {
     if (!file) {
       throw new BadRequestException('Файл не был загружен.');
     }
 
-    return this.documentsService.uploadFile(file);
+    return this.documentsService.create(file, body);
   }
 
   @Post(':id/ocr')
@@ -68,8 +78,28 @@ export class DocumentsController {
     return this.ocrService.process(id);
   }
 
-  @Get()
-  getAllDocuments() {
-    return this.documentsService.getAllDocuments();
+  @Get(':id/file')
+  async getFile(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    const document = await this.documentsService.findOne(id);
+    const filePath = await this.documentsService.getFilename(id);
+    
+    if (!filePath || !document.originalFileName) {
+      throw new NotFoundException('Путь к файлу или оригинальное имя отсутствует в базе данных');
+    }
+
+    const absolutePath = join(process.cwd(), filePath);
+
+    if (!existsSync(absolutePath)) {
+      throw new NotFoundException('Файл физически отсутствует на сервере в папке uploads');
+    }
+
+    const fileStream = createReadStream(absolutePath);
+    
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `inline; filename="${document.originalFileName}"`,
+    });
+
+    return new StreamableFile(fileStream);
   }
 }
