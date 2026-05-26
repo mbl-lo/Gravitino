@@ -144,6 +144,30 @@ Response:
 }
 ```
 
+### Mock OCR обработка документа
+
+**POST** `/documents/:id/ocr`
+
+Запускает mock OCR для документа по его id. Возвращает распознанные данные путевого листа.
+
+Пример ответа:
+```json
+{
+  "document_id": "PL-2026-00127",
+  "date": "2026-05-26",
+  "organization": "ООО 'Транс Логистик'",
+  "driver": { "name": "Сидоров Дмитрий Михайлович", "employee_number": "00245" },
+  "vehicle": { "model": "Hyundai Solaris", "license_plate": "С789МР" },
+  "mileage": { "odometer_start": 45672, "odometer_end": 45856, "calculated": 184 },
+  "fuel": { "start_balance": 42, "issued": 20, "end_balance": 31, "deviation_percent": 18 },
+  "anomalies": [{ "type": "fuel_overconsumption", "severity": "high" }]
+}
+```
+
+### Список документов
+
+**GET** `/documents`
+
 ### Ошибки
 
 | Код | Описание |
