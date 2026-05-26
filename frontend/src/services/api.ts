@@ -1,36 +1,75 @@
-import axios from 'axios'
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { ApiError } from './types'
 
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
+// Создаём экземпляр axios с базовыми настройками
+const api: AxiosInstance = axios.create({
+  baseURL: '/api',           // Будет проксироваться через Vite
+  timeout: 30000,            // Таймаут 30 секунд
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 })
 
-// Интерсептор для добавления токена
+// 📥 Интерсептор запроса (добавляет токен авторизации)
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('auth_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
+  (error: AxiosError) => {
+    console.error('Request error:', error)
     return Promise.reject(error)
   }
 )
 
-// Интерсептор для обработки ошибок
+// 📤 Интерсептор ответа (обрабатывает ошибки)
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('auth_user')
-      window.location.href = '/login'
+  (response) => {
+    // Успешный ответ
+    return response
+  },
+  (error: AxiosError<ApiError>) => {
+    // Обработка ошибок
+    
+    if (error.response) {
+      const { status, data } = error.response
+      
+      switch (status) {
+        case 401:
+          // Не авторизован - очищаем localStorage и перенаправляем на логин
+          console.error('Unauthorized: Token expired or invalid')
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_user')
+          window.location.href = '/'
+          break
+          
+        case 403:
+          console.error('Forbidden: Insufficient permissions')
+          break
+          
+        case 404:
+          console.error('Not found:', error.config?.url)
+          break
+          
+        case 500:
+          console.error('Server error:', data?.message || 'Internal server error')
+          break
+          
+        default:
+          console.error(`HTTP ${status}:`, data?.message || error.message)
+      }
+    } else if (error.request) {
+      // Запрос был отправлен, но ответ не получен
+      console.error('Network error: No response from server', error.request)
+    } else {
+      // Ошибка при настройке запроса
+      console.error('Request setup error:', error.message)
     }
+    
     return Promise.reject(error)
   }
 )
