@@ -1,4 +1,6 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class DocumentsService {
@@ -26,5 +28,19 @@ export class DocumentsService {
 
     getAllDocuments() {
         return this.mockDatabase;
+    }
+
+    getFilename(id: string): string {
+        const document = this.documents.find(doc => doc.id === id);
+        if (!document) {
+            throw new NotFoundException('Документ с таким id не найден');
+        }
+
+        const filePath = join(process.cwd(), 'uploads', document.filename);
+        if (!existsSync(filePath)) {
+            throw new NotFoundException('Файл не найден');
+        }
+
+        return document.filename;
     }
 }
