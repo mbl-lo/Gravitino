@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -18,7 +18,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  // При загрузке проверяем localStorage и восстанавливаем сессию
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true)
@@ -29,16 +28,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (storedToken && storedUser) {
           setToken(storedToken)
           setUser(JSON.parse(storedUser))
-          
-          // Опционально: проверить валидность токена на сервере
-          // const currentUser = await authService.getCurrentUser()
-          // if (currentUser) {
-          //   setUser(currentUser)
-          // } else {
-          //   // Токен невалиден
-          //   localStorage.removeItem('auth_token')
-          //   localStorage.removeItem('auth_user')
-          // }
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
@@ -50,7 +39,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth()
   }, [])
 
-  // Функция входа через API
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
@@ -71,7 +59,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }
 
-  // Функция выхода через API
   const logout = async () => {
     setIsLoading(true)
     try {
@@ -82,9 +69,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
       setIsLoading(false)
-      
-      // Перенаправляем на страницу входа
-      window.location.href = '/'
     }
   }
 

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
 const Header = () => {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleSearch = (e: React.FormEvent) => {
@@ -12,6 +14,11 @@ const Header = () => {
 
   const handleNotifications = () => {
     console.log('Уведомления')
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
   }
 
   return (
@@ -43,6 +50,10 @@ const Header = () => {
           <span style={styles.userName}>{user?.name || 'Оператор Иванов'}</span>
           <span style={styles.userStatus}>Активен</span>
         </div>
+
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Выйти
+        </button>
       </div>
     </header>
   )
@@ -139,7 +150,7 @@ const styles = {
   userInfo: {
     display: 'flex',
     flexDirection: 'column' as const,
-    alignItems: 'flex-start',  // ← Активен по левому краю
+    alignItems: 'flex-start',
   },
   userName: {
     display: 'block',
@@ -151,6 +162,15 @@ const styles = {
     display: 'block',
     fontSize: '0.75rem',
     color: '#10b981',
+  },
+  logoutButton: {
+    padding: '6px 12px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '0.75rem',
   },
 }
 

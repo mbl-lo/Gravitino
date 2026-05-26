@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 function Login() {
@@ -9,15 +10,14 @@ function Login() {
   const [loading, setLoading] = useState(false)
 
   const { login, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
 
-  // Если уже авторизован - перенаправляем
   useEffect(() => {
     if (isAuthenticated) {
-      window.location.href = '/dashboard'
+      navigate('/dashboard')
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, navigate])
 
-  // Валидация email
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return re.test(email)
@@ -25,40 +25,36 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Очищаем предыдущие ошибки
+    
     setError('')
-
-    // Валидация полей
+    
     if (!email.trim()) {
       setError('Введите адрес электронной почты')
       return
     }
-
+    
     if (!validateEmail(email)) {
-      setError('Введите корректный адрес электронной почты (например, user@company.ru)')
+      setError('Введите корректный адрес электронной почты')
       return
     }
-
+    
     if (!password) {
       setError('Введите пароль')
       return
     }
-
+    
     if (password.length < 4) {
       setError('Пароль должен содержать не менее 4 символов')
       return
     }
-
+    
     setLoading(true)
 
     try {
       await login(email, password)
-      // После успешного входа useEffect сработает и перенаправит
     } catch (err: any) {
-      // Обработка разных типов ошибок
       const errorMessage = err.message || 'Ошибка при входе в систему'
-
+      
       if (errorMessage.includes('email') || errorMessage.includes('Email')) {
         setError('Неверный адрес электронной почты')
       } else if (errorMessage.includes('пароль') || errorMessage.includes('Password')) {
@@ -75,10 +71,9 @@ function Login() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-
-      {/* Левая колонка - синий фон */}
-      <div style={{
-        width: '50%',
+      
+      <div style={{ 
+        width: '50%', 
         backgroundColor: '#1d4ed8',
         display: 'flex',
         flexDirection: 'column',
@@ -103,7 +98,7 @@ function Login() {
             </svg>
           </div>
         </div>
-
+        
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
           Автоматизация обработки <br /> путевых листов
         </h2>
@@ -112,9 +107,8 @@ function Login() {
         </p>
       </div>
 
-      {/* Правая колонка - серый фон с карточкой */}
-      <div style={{
-        width: '50%',
+      <div style={{ 
+        width: '50%', 
         backgroundColor: '#f3f4f6',
         display: 'flex',
         alignItems: 'center',
@@ -138,7 +132,6 @@ function Login() {
             </p>
           </div>
 
-          {/* Блок с ошибкой - визуальное отображение */}
           {error && (
             <div className="animate-shake" style={{
               marginBottom: '1.5rem',
@@ -182,7 +175,7 @@ function Login() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value)
-                  if (error) setError('') // Очищаем ошибку при вводе
+                  if (error) setError('')
                 }}
                 disabled={loading}
                 required
@@ -259,13 +252,13 @@ function Login() {
             </p>
           </div>
 
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            backgroundColor: '#f0fdf4',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            color: '#166534',
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.75rem', 
+            backgroundColor: '#f0fdf4', 
+            borderRadius: '8px', 
+            fontSize: '0.75rem', 
+            color: '#166534', 
             textAlign: 'center',
             border: '1px solid #bbf7d0'
           }}>
@@ -278,14 +271,3 @@ function Login() {
 }
 
 export default Login
-
-// Добавьте стиль для анимации в index.css или в head
-const styleSheet = document.createElement("style")
-styleSheet.textContent = `
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-    20%, 40%, 60%, 80% { transform: translateX(2px); }
-  }
-`
-document.head.appendChild(styleSheet)
