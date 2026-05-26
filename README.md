@@ -182,6 +182,7 @@ Response:
     "email": "operator.ivanov@company.ru",
     "name": "Иванов Иван Иванович",
     "role": "OPERATOR",
+    "isActive": true,
     "createdAt": "2026-05-26T10:00:00.000Z"
   },
   ...
@@ -205,6 +206,7 @@ Response:
   "email": "demo@company.ru",
   "name": "Алексеева Анна Сергеевна",
   "role": "OPERATOR",
+  "organizationId": "uuid",
   "createdAt": "2026-05-26T15:20:00.000Z"
 }
 ```

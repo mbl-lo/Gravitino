@@ -27,8 +27,8 @@ export class DocumentsController {
   ) {}
 
   @Get()
-  async findAll() {
-    return this.documentsService.findAll();
+  async getDocumentsList() {
+    return this.documentsService.getDocumentsList();
   }
 
   @Post('upload')

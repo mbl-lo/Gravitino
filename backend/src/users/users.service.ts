@@ -37,15 +37,19 @@ export class UsersService {
     });
   }
 
-  async findAll() {
+  async getAll() {
     return this.prisma.user.findMany({
       select: {
         id: true,
-        email: true,
         fullName: true,
+        email: true,
         role: true,
-        organizationId: true,
+        isActive: true,
         createdAt: true,
+      },
+
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }

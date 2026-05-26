@@ -5,23 +5,38 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DocumentsService {
   constructor(private prisma: PrismaService) {}
 
-    async create(file: any, body: any) {
-        return this.prisma.document.create({
-            data: {
-            originalFileName: file.originalname,
-            originalFileUrl: file.path, 
-            fileMimeType: file.mimetype,
-            fileSize: file.size,
-            uploadedById: "33333333-3333-4333-8333-333333333334",
-            },
-        });
-    }
-
-  async findAll() {
+  async create(file: any, body: any) {
+      return this.prisma.document.create({
+          data: {
+          originalFileName: file.originalname,
+          originalFileUrl: file.path, 
+          fileMimeType: file.mimetype,
+          fileSize: file.size,
+          uploadedById: "33333333-3333-4333-8333-333333333334",
+          },
+      });
+  }
+  async getDocumentsList() {
     return this.prisma.document.findMany({
+      select: {
+        id: true,
+        originalFileName: true,
+        status: true,
+        ocrStatus: true,
+        hasAnomalies: true,
+        createdAt: true,
+      },
+
+      where: {
+        ocrStatus: {
+          in: ['pending', 'processing', 'error'],
+        },
+      },
+
       orderBy: {
         createdAt: 'desc',
       },
+ 
     });
   }
 
