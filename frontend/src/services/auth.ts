@@ -4,13 +4,14 @@ import { LoginRequest, LoginResponse, User } from './types'
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      console.log('Login attempt:', credentials)
+      console.log('Login attempt:', credentials.email)
       
-      // Имитируем задержку сети
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Проверка для единственного пользователя
-      if (credentials.email === 'demo@company.ru' && credentials.password === '123456') {
+      const isValidEmail = credentials.email === 'demo@company.ru'
+      const isValidPassword = credentials.password === '123456'
+      
+      if (isValidEmail && isValidPassword) {
         const user: User = {
           id: 1,
           email: 'demo@company.ru',
@@ -26,8 +27,16 @@ export const authService = {
         }
       }
       
-      // Неверные данные
-      throw new Error('Неверный email или пароль')
+      if (!isValidEmail) {
+        throw new Error('invalid_email')
+      }
+      
+      if (!isValidPassword) {
+        throw new Error('invalid_password')
+      }
+      
+      throw new Error('invalid_credentials')
+      
     } catch (error) {
       console.error('Login API error:', error)
       throw error

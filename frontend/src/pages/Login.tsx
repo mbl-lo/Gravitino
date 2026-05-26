@@ -53,16 +53,16 @@ function Login() {
     try {
       await login(email, password)
     } catch (err: any) {
-      const errorMessage = err.message || 'Ошибка при входе в систему'
+      const errorMessage = err.message
       
-      if (errorMessage.includes('email') || errorMessage.includes('Email')) {
-        setError('Неверный адрес электронной почты')
-      } else if (errorMessage.includes('пароль') || errorMessage.includes('Password')) {
+      if (errorMessage === 'invalid_email') {
+        setError('Пользователь с таким email не найден')
+      } else if (errorMessage === 'invalid_password') {
         setError('Неверный пароль')
-      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+      } else if (errorMessage?.includes('network') || errorMessage?.includes('Network')) {
         setError('Ошибка сети. Проверьте подключение к интернету')
       } else {
-        setError(errorMessage)
+        setError('Неверный email или пароль')
       }
     } finally {
       setLoading(false)
@@ -133,25 +133,16 @@ function Login() {
           </div>
 
           {error && (
-            <div className="animate-shake" style={{
+            <div style={{
               marginBottom: '1.5rem',
               padding: '12px 16px',
               backgroundColor: '#fef2f2',
               borderLeft: '4px solid #ef4444',
               borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
             }}>
-              <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-              <div>
-                <p style={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
-                  Ошибка авторизации
-                </p>
-                <p style={{ color: '#991b1b', fontSize: '0.75rem', margin: '4px 0 0 0' }}>
-                  {error}
-                </p>
-              </div>
+              <p style={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
+                {error}
+              </p>
             </div>
           )}
 
@@ -166,19 +157,14 @@ function Login() {
                 style={{
                   width: '100%',
                   padding: '0.5rem 0.75rem',
-                  border: error && !email ? '1px solid #ef4444' : '1px solid #d1d5db',
+                  border: '1px solid #d1d5db',
                   borderRadius: '8px',
                   outline: 'none',
-                  transition: 'all 0.2s'
                 }}
                 placeholder="demo@company.ru"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (error) setError('')
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                required
               />
             </div>
 
@@ -192,19 +178,14 @@ function Login() {
                 style={{
                   width: '100%',
                   padding: '0.5rem 0.75rem',
-                  border: error && !password ? '1px solid #ef4444' : '1px solid #d1d5db',
+                  border: '1px solid #d1d5db',
                   borderRadius: '8px',
                   outline: 'none',
-                  transition: 'all 0.2s'
                 }}
                 placeholder="********"
                 value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (error) setError('')
-                }}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                required
               />
             </div>
 
@@ -237,7 +218,6 @@ function Login() {
                 borderRadius: '8px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.6 : 1,
-                transition: 'all 0.2s'
               }}
             >
               {loading ? 'Вход...' : 'Войти в систему'}
@@ -260,9 +240,8 @@ function Login() {
             fontSize: '0.75rem', 
             color: '#166534', 
             textAlign: 'center',
-            border: '1px solid #bbf7d0'
           }}>
-            🧪 <strong>Тестовые данные:</strong> demo@company.ru / 123456
+            🧪 Тестовые данные: demo@company.ru / 123456
           </div>
         </div>
       </div>
