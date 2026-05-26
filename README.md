@@ -1,76 +1,150 @@
-## Работа с API
+# Gravitino
 
-### Загрузка путевого листа (документа)
-**Эндпоинт:** `POST /documents/upload`
+Прототип веб-приложения "Цифровой архив путевых листов".
 
-**Формат запроса:** `multipart/form-data`
+## Стек
 
-**Параметры (form-data):**
-- `file` *(обязательный)*: Файл путевого листа (форматы: .jpg, .png, .pdf, .heic).
-- `description` *(необязательный)*: Текстовое описание к загружаемому файлу.
+- Frontend: React + Vite + TypeScript.
+- Backend: NestJS + TypeScript.
+- БД: PostgreSQL.
+- ORM: Prisma.
 
-**Пример успешного ответа:**
-```json
-{
-    "message": "Файл успешно загружен",
-    "document": {
-        "id": 1779722907348,
-        "filename": "1779722907334-93392284.JPG",
-        "originalname": "_MG_9210.JPG",
-        "path": "uploads\\1779722907334-93392284.JPG",
-        "size": 2799749,
-        "status": "Ожидает обработки",
-        "uploadedAt": "2026-05-25T15:28:27.348Z"
-    }
-}
+## Локальная подготовка
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
 ```
 
-### API авторизации
+На Windows, если PowerShell блокирует `npm.ps1`, используйте `npm.cmd install`.
+
+## Переменные окружения
+
+Пример общих переменных находится в `.env.example`, пример backend-переменных — в `backend/.env.example`.
+
+Для локального запуска создайте файл `backend/.env`:
+
+```env
+DATABASE_URL=postgresql://postgres@localhost:5433/waybill?schema=public
+JWT_SECRET=local-dev-secret
+PORT=3000
+```
+
+Если у другого разработчика PostgreSQL установлен стандартно, обычно подойдет:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/waybill?schema=public
+```
+
+## База данных
+
+Схема описана в `backend/prisma/schema.prisma` и соответствует ERD проекта:
+
+- `organizations`, `departments`, `users`;
+- `drivers`, `vehicles`;
+- `documents`, `document_fields`, `document_history`;
+- `validation_rules`, `anomalies`;
+- `processing_jobs`, `integration_configs`, `export_jobs`, `audit_logs`.
+
+### Создание БД и миграции
+
+```bash
+createdb waybill
+cd backend
+npm run db:migrate -- --name init_waybill_schema
+npm run db:generate
+```
+
+### Тестовые данные
+
+После миграций можно загрузить тестовые данные:
+
+```bash
+psql "$DATABASE_URL" -f ../database/seed.sql
+```
+
+Тестовый пользователь:
+
+- email: `admin@gravitino.local`
+- пароль: `password123`
+
+## Импорт дампа БД
+
+Дамп лежит в `database/waybill_dump.sql`.
+
+```bash
+createdb waybill
+psql -d waybill -f database/waybill_dump.sql
+```
+
+## Запуск backend
+
+```bash
+cd backend
+npm install
+npm run db:generate
+npm run start:dev
+```
+
+## Работа с API
 
 Base URL: `http://localhost:3000`
 
-#### Регистрация
-
-**POST** `/auth/register`
-
-Request body:
-```json
-{
-  "name": "Vadim",
-  "email": "vadim@example.com",
-  "password": "123456"
-}
-```
-
-Response:
-```json
-{
-  "message": "register stub",
-  "email": "vadim@example.com"
-}
-```
-
-#### Вход
+### Авторизация
 
 **POST** `/auth/login`
 
 Request body:
 ```json
 {
-  "email": "vadim@example.com",
-  "password": "123456"
+  "email": "admin@gravitino.local",
+  "password": "password123"
 }
 ```
 
 Response:
 ```json
 {
-  "message": "login stub",
-  "email": "vadim@example.com"
+  "accessToken": "...",
+  "user": {
+    "id": "...",
+    "email": "admin@gravitino.local",
+    "fullName": "...",
+    "role": "operator"
+  }
 }
 ```
 
-#### Ошибки
+**GET** `/auth/me` — требует заголовок `Authorization: Bearer <token>`
+
+### Загрузка путевого листа (документа)
+
+**POST** `/documents/upload` — `multipart/form-data`
+
+Параметры:
+- `file` *(обязательный)*: файл (.jpg, .png, .pdf, .heic)
+- `description` *(необязательный)*: описание
+
+Пример успешного ответа:
+```json
+{
+  "message": "Файл успешно загружен",
+  "document": {
+    "id": 1779722907348,
+    "filename": "1779722907334-93392284.JPG",
+    "originalname": "_MG_9210.JPG",
+    "path": "uploads/1779722907334-93392284.JPG",
+    "size": 2799749,
+    "status": "Ожидает обработки",
+    "uploadedAt": "2026-05-25T15:28:27.348Z"
+  }
+}
+```
+
+### Ошибки
 
 | Код | Описание |
 |-----|----------|
