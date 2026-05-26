@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
-import AppPage from './pages/AppPage'
+import Dashboard from './pages/Dashboard'
+import Layout from './components/Layout/Layout'
 
-// Компонент для защиты маршрутов
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
   
@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/" replace />
   }
   
-  return children
+  return <Layout>{children}</Layout>
 }
 
 function AppRoutes() {
@@ -20,11 +20,61 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={
-        isAuthenticated ? <Navigate to="/app" replace /> : <Login />
+        isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
       } />
-      <Route path="/app" element={
+      
+      {/* Все защищённые страницы обёрнуты в Layout */}
+      <Route path="/dashboard" element={
         <ProtectedRoute>
-          <AppPage />
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/upload" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>📤 Загрузка документов (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/queue" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>⏳ Очередь обработки (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/archive" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>📁 Архив путевых листов (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/anomalies" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>⚠️ Аномалии (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/export" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>📎 Экспорт и интеграции (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/training" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>🎓 Обучающие данные (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>⚙️ Настройки (в разработке)</div>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/users" element={
+        <ProtectedRoute>
+          <div style={{ padding: '24px' }}>👥 Пользователи (в разработке)</div>
         </ProtectedRoute>
       } />
     </Routes>

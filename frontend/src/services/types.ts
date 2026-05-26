@@ -1,5 +1,3 @@
-// Типы для API запросов и ответов
-
 export interface LoginRequest {
   email: string
   password: string
