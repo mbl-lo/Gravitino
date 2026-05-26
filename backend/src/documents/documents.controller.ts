@@ -1,50 +1,61 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Body, Get, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, NotFoundException, StreamableFile, Res, UseInterceptors, UploadedFile, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { DocumentsService } from './documents.service';
+import { createReadStream, existsSync } from 'fs';
+import { join, extname } from 'path';
+import { Response } from 'express';
+import { diskStorage } from 'multer';
 
 @Controller('documents')
 export class DocumentsController {
-    constructor(private readonly documentsService: DocumentsService) {}
+  constructor(private readonly documentsService: DocumentsService) {}
 
-    @Post('upload')
-    @UseInterceptors(FileInterceptor('file', {
-        storage: diskStorage({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                const ext = extname(file.originalname);
-                cb(null, `${uniqueSuffix}${ext}`);
-            }
-        }),
+  @Get()
+  async findAll() {
+    return this.documentsService.findAll();
+  }
 
-        fileFilter: (req, file, cb) => {
-            const allowedMimes = [
-                'image/jpeg', 
-                'image/png', 
-                'application/pdf', 
-                'image/heic'
-            ];
+  @Post()
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  async uploadFile(@UploadedFile() file: any, @Body() body: any) {
+    if (!file) {
+      throw new NotFoundException('Файл не передан');
+    }
+    return this.documentsService.create(file, body);
+  }
 
-            if (allowedMimes.includes(file.mimetype)) {
-                cb(null, true);
-            } else {
-                cb(new BadRequestException('Недопустимый формат файла. Разрешены только JPG, PNG, PDF и HEIC.'), false
-                );
-            }
-        }
-    }))
-    upload(@UploadedFile() file: Express.Multer.File) {
-        if (!file) {
-            throw new BadRequestException('Файл не был загружен.');
-        }
-        
-        return this.documentsService.uploadFile(file);
+  @Get(':id/file')
+  async getFile(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    const document = await this.documentsService.findOne(id);
+    const filePath = await this.documentsService.getFilename(id);
+    
+    if (!filePath || !document.originalFileName) {
+      throw new NotFoundException('Путь к файлу или оригинальное имя отсутствует в базе данных');
     }
 
-    @Get()
-    getAllDocuments() {
-        return this.documentsService.getAllDocuments();
+    const absolutePath = join(process.cwd(), filePath);
+
+    if (!existsSync(absolutePath)) {
+      throw new NotFoundException('Файл физически отсутствует на сервере в папке uploads');
     }
+
+    const fileStream = createReadStream(absolutePath);
+    
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `inline; filename="${document.originalFileName}"`,
+    });
+
+    return new StreamableFile(fileStream);
+  }
 }
