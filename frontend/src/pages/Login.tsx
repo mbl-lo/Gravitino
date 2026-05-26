@@ -13,21 +13,61 @@ function Login() {
   // Если уже авторизован - перенаправляем
   useEffect(() => {
     if (isAuthenticated) {
-      // Перенаправление на страницу приложения
-      window.location.href = '/app'
+      window.location.href = '/dashboard'
     }
   }, [isAuthenticated])
 
+  // Валидация email
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return re.test(email)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Очищаем предыдущие ошибки
     setError('')
+
+    // Валидация полей
+    if (!email.trim()) {
+      setError('Введите адрес электронной почты')
+      return
+    }
+
+    if (!validateEmail(email)) {
+      setError('Введите корректный адрес электронной почты (например, user@company.ru)')
+      return
+    }
+
+    if (!password) {
+      setError('Введите пароль')
+      return
+    }
+
+    if (password.length < 4) {
+      setError('Пароль должен содержать не менее 4 символов')
+      return
+    }
+
     setLoading(true)
 
     try {
       await login(email, password)
       // После успешного входа useEffect сработает и перенаправит
     } catch (err: any) {
-      setError(err.message || 'Ошибка при входе в систему')
+      // Обработка разных типов ошибок
+      const errorMessage = err.message || 'Ошибка при входе в систему'
+
+      if (errorMessage.includes('email') || errorMessage.includes('Email')) {
+        setError('Неверный адрес электронной почты')
+      } else if (errorMessage.includes('пароль') || errorMessage.includes('Password')) {
+        setError('Неверный пароль')
+      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+        setError('Ошибка сети. Проверьте подключение к интернету')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setLoading(false)
     }
@@ -35,10 +75,10 @@ function Login() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      
+
       {/* Левая колонка - синий фон */}
-      <div style={{ 
-        width: '50%', 
+      <div style={{
+        width: '50%',
         backgroundColor: '#1d4ed8',
         display: 'flex',
         flexDirection: 'column',
@@ -63,7 +103,7 @@ function Login() {
             </svg>
           </div>
         </div>
-        
+
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
           Автоматизация обработки <br /> путевых листов
         </h2>
@@ -73,8 +113,8 @@ function Login() {
       </div>
 
       {/* Правая колонка - серый фон с карточкой */}
-      <div style={{ 
-        width: '50%', 
+      <div style={{
+        width: '50%',
         backgroundColor: '#f3f4f6',
         display: 'flex',
         alignItems: 'center',
@@ -98,17 +138,27 @@ function Login() {
             </p>
           </div>
 
+          {/* Блок с ошибкой - визуальное отображение */}
           {error && (
-            <div style={{
-              marginBottom: '1rem',
-              padding: '0.75rem',
+            <div className="animate-shake" style={{
+              marginBottom: '1.5rem',
+              padding: '12px 16px',
               backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              fontSize: '0.875rem',
-              borderRadius: '8px'
+              borderLeft: '4px solid #ef4444',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
             }}>
-              {error}
+              <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+              <div>
+                <p style={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
+                  Ошибка авторизации
+                </p>
+                <p style={{ color: '#991b1b', fontSize: '0.75rem', margin: '4px 0 0 0' }}>
+                  {error}
+                </p>
+              </div>
             </div>
           )}
 
@@ -123,13 +173,17 @@ function Login() {
                 style={{
                   width: '100%',
                   padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
+                  border: error && !email ? '1px solid #ef4444' : '1px solid #d1d5db',
                   borderRadius: '8px',
-                  outline: 'none'
+                  outline: 'none',
+                  transition: 'all 0.2s'
                 }}
-                placeholder="example@company.ru"
+                placeholder="demo@company.ru"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (error) setError('') // Очищаем ошибку при вводе
+                }}
                 disabled={loading}
                 required
               />
@@ -145,13 +199,17 @@ function Login() {
                 style={{
                   width: '100%',
                   padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
+                  border: error && !password ? '1px solid #ef4444' : '1px solid #d1d5db',
                   borderRadius: '8px',
-                  outline: 'none'
+                  outline: 'none',
+                  transition: 'all 0.2s'
                 }}
                 placeholder="********"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  if (error) setError('')
+                }}
                 disabled={loading}
                 required
               />
@@ -184,8 +242,9 @@ function Login() {
                 padding: '0.625rem',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: 'pointer',
-                opacity: loading ? 0.5 : 1
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                transition: 'all 0.2s'
               }}
             >
               {loading ? 'Вход...' : 'Войти в систему'}
@@ -200,8 +259,17 @@ function Login() {
             </p>
           </div>
 
-          <div style={{ marginTop: '1rem', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '8px', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center' }}>
-            Тестовые данные: demo@company.ru / 123456
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            backgroundColor: '#f0fdf4',
+            borderRadius: '8px',
+            fontSize: '0.75rem',
+            color: '#166534',
+            textAlign: 'center',
+            border: '1px solid #bbf7d0'
+          }}>
+            🧪 <strong>Тестовые данные:</strong> demo@company.ru / 123456
           </div>
         </div>
       </div>
@@ -210,3 +278,14 @@ function Login() {
 }
 
 export default Login
+
+// Добавьте стиль для анимации в index.css или в head
+const styleSheet = document.createElement("style")
+styleSheet.textContent = `
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+  }
+`
+document.head.appendChild(styleSheet)
