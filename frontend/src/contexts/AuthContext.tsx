@@ -23,14 +23,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(true)
       try {
         const storedToken = localStorage.getItem('auth_token')
-        const storedUser = localStorage.getItem('auth_user')
         
-        if (storedToken && storedUser) {
-          setToken(storedToken)
-          setUser(JSON.parse(storedUser))
+        if (storedToken) {
+          const currentUser = await authService.getCurrentUser()
+          
+          if (currentUser) {
+            setToken(storedToken)
+            setUser(currentUser)
+            localStorage.setItem('auth_user', JSON.stringify(currentUser))
+          } else {
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('auth_user')
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
       } finally {
         setIsLoading(false)
       }
@@ -44,16 +53,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authService.login({ email, password })
       
-      setToken(response.token)
+      setToken(response.accessToken)
       setUser(response.user)
       
-      localStorage.setItem('auth_token', response.token)
+      localStorage.setItem('auth_token', response.accessToken)
       localStorage.setItem('auth_user', JSON.stringify(response.user))
       
       console.log('Login successful!', response.user)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error)
-      throw error
+      const errorMessage = error.response?.data?.message || 'Ошибка при входе в систему'
+      throw new Error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -63,6 +73,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true)
     try {
       await authService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
     } finally {
       setToken(null)
       setUser(null)
