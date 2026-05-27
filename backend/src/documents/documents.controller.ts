@@ -73,9 +73,10 @@ export class DocumentsController {
     return this.documentsService.create(file, body);
   }
 
-  @Post(':id/ocr')
-  processOcr(@Param('id') id: string) {
-    return this.ocrService.process(id);
+  @Post(':id/run-ocr')
+  async runOcr(@Param('id') id: string) {
+    const ocrResult = this.ocrService.process(id);
+    return this.documentsService.saveOcrResult(id, ocrResult);
   }
 
   @Get(':id/file')
