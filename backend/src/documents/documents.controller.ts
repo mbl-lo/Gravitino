@@ -18,12 +18,14 @@ import { join, extname } from 'path';
 import { Response } from 'express';
 import { diskStorage } from 'multer';
 import { OcrService } from './ocr.service';
+import { AnomaliesService } from '../anomalies/anomalies.service';
 
 @Controller('documents')
 export class DocumentsController {
   constructor(
     private readonly documentsService: DocumentsService,
     private readonly ocrService: OcrService,
+    private readonly anomaliesService: AnomaliesService,
   ) {}
 
   @Get()
@@ -73,9 +75,12 @@ export class DocumentsController {
     return this.documentsService.create(file, body);
   }
 
-  @Post(':id/ocr')
-  processOcr(@Param('id') id: string) {
-    return this.ocrService.process(id);
+  @Post(':id/run-ocr')
+  async runOcr(@Param('id') id: string) {
+    const ocrResult = this.ocrService.process(id);
+    const saved = await this.documentsService.saveOcrResult(id, ocrResult);
+    const validation = await this.anomaliesService.validateDocument(id);
+    return { ...saved, validation };
   }
 
   @Get(':id')
