@@ -43,27 +43,12 @@ function Login() {
       return
     }
     
-    if (password.length < 4) {
-      setError('Пароль должен содержать не менее 4 символов')
-      return
-    }
-    
     setLoading(true)
 
     try {
       await login(email, password)
     } catch (err: any) {
-      const errorMessage = err.message
-      
-      if (errorMessage === 'invalid_email') {
-        setError('Пользователь с таким email не найден')
-      } else if (errorMessage === 'invalid_password') {
-        setError('Неверный пароль')
-      } else if (errorMessage?.includes('network') || errorMessage?.includes('Network')) {
-        setError('Ошибка сети. Проверьте подключение к интернету')
-      } else {
-        setError('Неверный email или пароль')
-      }
+      setError(err.message || 'Ошибка при входе в систему')
     } finally {
       setLoading(false)
     }
@@ -161,7 +146,7 @@ function Login() {
                   borderRadius: '8px',
                   outline: 'none',
                 }}
-                placeholder="demo@company.ru"
+                placeholder="example@company.ru"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -231,18 +216,7 @@ function Login() {
               Доступ только для сотрудников организации
             </p>
           </div>
-
-          <div style={{ 
-            marginTop: '1rem', 
-            padding: '0.75rem', 
-            backgroundColor: '#f0fdf4', 
-            borderRadius: '8px', 
-            fontSize: '0.75rem', 
-            color: '#166534', 
-            textAlign: 'center',
-          }}>
-            🧪 Тестовые данные: demo@company.ru / 123456
-          </div>
+          
         </div>
       </div>
     </div>

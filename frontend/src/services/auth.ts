@@ -3,44 +3,8 @@ import { LoginRequest, LoginResponse, User } from './types'
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    try {
-      console.log('Login attempt:', credentials.email)
-      
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const isValidEmail = credentials.email === 'demo@company.ru'
-      const isValidPassword = credentials.password === '123456'
-      
-      if (isValidEmail && isValidPassword) {
-        const user: User = {
-          id: 1,
-          email: 'demo@company.ru',
-          name: 'Оператор Иванов',
-          role: 'admin',
-          company: 'Транспортная компания',
-        }
-        
-        return {
-          success: true,
-          token: 'mock_jwt_token_' + Date.now(),
-          user: user,
-        }
-      }
-      
-      if (!isValidEmail) {
-        throw new Error('invalid_email')
-      }
-      
-      if (!isValidPassword) {
-        throw new Error('invalid_password')
-      }
-      
-      throw new Error('invalid_credentials')
-      
-    } catch (error) {
-      console.error('Login API error:', error)
-      throw error
-    }
+    const response = await api.post('/auth/login', credentials)
+    return response.data
   },
 
   async logout(): Promise<void> {
@@ -54,22 +18,10 @@ export const authService = {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const storedUser = localStorage.getItem('auth_user')
-      return storedUser ? JSON.parse(storedUser) : null
+      const response = await api.get<User>('/auth/me')
+      return response.data
     } catch (error) {
       console.error('Get current user error:', error)
-      return null
-    }
-  },
-
-  async refreshToken(): Promise<string | null> {
-    try {
-      const response = await api.post<{ token: string }>('/auth/refresh')
-      const newToken = response.data.token
-      localStorage.setItem('auth_token', newToken)
-      return newToken
-    } catch (error) {
-      console.error('Token refresh error:', error)
       return null
     }
   },
