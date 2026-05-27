@@ -78,6 +78,15 @@ export class DocumentsController {
     return this.ocrService.process(id);
   }
 
+  @Get(':id')
+  async getDocumentDetails(@Param('id') id: string) {
+    const document = await this.documentsService.findOneDetails(id);
+    if (!document) {
+      throw new NotFoundException('Документ не найден');
+    }
+    return document;
+  }
+
   @Get(':id/file')
   async getFile(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
     const document = await this.documentsService.findOne(id);
