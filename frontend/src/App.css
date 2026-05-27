@@ -1,0 +1,35 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.nav-link.active {
+  background: #e7edfe;
+  color: #153b7a;
+}

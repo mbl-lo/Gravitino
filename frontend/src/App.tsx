@@ -4,6 +4,9 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Layout from './components/Layout/Layout'
 import PlaceholderPage from './components/PlaceholderPage'
+import UploadPage from './pages/UploadPage'
+import QueuePage from './pages/QueuePage'
+import './App.css'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -32,21 +35,13 @@ function AppRoutes() {
       
       <Route path="/upload" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Загрузка документов" 
-            icon="📤"
-            description="Загрузка и распознавание путевых листов"
-          />
+          <UploadPage />
         </ProtectedRoute>
       } />
       
       <Route path="/queue" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Очередь обработки" 
-            icon="⏳"
-            description="Документы, ожидающие обработки"
-          />
+          <QueuePage />
         </ProtectedRoute>
       } />
       
