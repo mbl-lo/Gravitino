@@ -5,23 +5,34 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DocumentsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(file: any, body: any) {
+  async create(files: any[], body: any) {
     const { uploadedById } = body;
-    return this.prisma.document.create({
-        data: {
-        originalFileName: file.originalname,
-        originalFileUrl: file.path, 
-        fileMimeType: file.mimetype,
-        fileSize: file.size,
-         uploadedById: uploadedById,
-        },
-    });
+    const createdDocuments = await Promise.all(
+      files.map((file) =>
+        this.prisma.document.create({
+          data: {
+            originalFileName: file.originalname,
+            originalFileUrl: file.path,
+            fileMimeType: file.mimetype,
+            fileSize: file.size,
+            uploadedById: uploadedById,
+            ocrStatus: 'pending',
+            status: 'processing',
+          },
+        })
+      )
+    );
+    return {
+      message: 'Файлы успешно загружены',
+      files: createdDocuments,
+    };
   }
   async getDocumentsList() {
     return this.prisma.document.findMany({
       select: {
         id: true,
         originalFileName: true,
+        fileSize: true,
         status: true,
         ocrStatus: true,
         hasAnomalies: true,
@@ -30,7 +41,7 @@ export class DocumentsService {
 
       where: {
         ocrStatus: {
-          in: ['pending', 'processing', 'error'],
+          in: ['pending', 'processing', 'error', 'completed'],
         },
       },
 

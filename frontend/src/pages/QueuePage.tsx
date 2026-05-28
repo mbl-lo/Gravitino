@@ -15,7 +15,22 @@ const QueuePage = () => {
   const fetchQueue = useCallback(async () => {
     try {
       const response = await getQueue();
-      setDocuments(response.data);
+
+      const mappedData: QueueDocument[] = response.data.map((doc: any) => ({
+        id: doc.id,
+        name: doc.originalFileName,
+        size: doc.fileSize,
+        status: doc.ocrStatus === 'completed' ? 'completed' 
+              : doc.ocrStatus === 'error' ? 'error'
+              : doc.ocrStatus === 'processing' ? 'processing'
+              : 'waiting',
+        progress: doc.ocrStatus === 'completed' ? 100 : 45,
+        added: doc.createdAt 
+            ? new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : ''
+      }));
+
+      setDocuments(mappedData);
     } catch (err) {
       console.error('Ошибка загрузки очереди:', err);
     } finally {

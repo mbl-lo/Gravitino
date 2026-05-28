@@ -6,7 +6,7 @@ async function bootstrap() {
 
   // Разрешить все источники (для разработки)
   app.enableCors({
-    origin: true,
+    origin: 'http://localhost:5173',
     credentials: true,
   })
 

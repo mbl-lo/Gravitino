@@ -44,16 +44,21 @@ api.interceptors.response.use(
 /**
  * Загрузка одного или нескольких файлов на сервер
  * @param files - массив File объектов
- * @returns ответ с массивом загруженных файлов
  */
 export const uploadDocuments = (files: File[]) => {
   const formData = new FormData()
-  files.forEach(file => {
-    formData.append('documents', file)
+
+  files.forEach((file) => {
+    formData.append('files', file)
   })
-  return api.post('/upload', formData, {
+
+  const userStr = localStorage.getItem('auth_user')
+  const user = userStr ? JSON.parse(userStr) : {}
+  formData.append('uploadedById', user.id)
+
+  return api.post('/documents/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000, // увеличенный таймаут для файлов
+    timeout: 60000, 
   })
 }
 
@@ -71,10 +76,9 @@ export interface QueueDocument {
 
 /**
  * Получение текущей очереди обработки
- * @returns массив документов в очереди
  */
 export const getQueue = () => {
-  return api.get<QueueDocument[]>('/queue')
+  return api.get<QueueDocument[]>('/documents')
 }
 
 /**
@@ -82,14 +86,14 @@ export const getQueue = () => {
  * @param id - идентификатор документа
  */
 export const removeFromQueue = (id: string) => {
-  return api.delete(`/queue/${encodeURIComponent(id)}`)
+  return api.delete(`/documents/${encodeURIComponent(id)}`)
 }
 
 /**
  * Очистка всех завершённых документов из очереди
  */
 export const clearCompleted = () => {
-  return api.delete('/queue/completed')
+  return api.delete('/documents/completed')
 }
 
 // --- ДАШБОРД (DashboardPage) ---

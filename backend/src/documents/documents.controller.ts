@@ -7,11 +7,11 @@ import {
   StreamableFile,
   Res,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   Body,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { createReadStream, existsSync } from 'fs';
 import { join, extname } from 'path';
@@ -35,7 +35,7 @@ export class DocumentsController {
 
   @Post('upload')
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 10, {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
@@ -67,12 +67,20 @@ export class DocumentsController {
       },
     }),
   )
-  upload(@UploadedFile() file: any, @Body() body: any) {
-    if (!file) {
-      throw new BadRequestException('Файл не был загружен.');
+  async upload(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: any) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Файлы не были загружены.');
     }
 
-    return this.documentsService.create(file, body);
+    const result = await this.documentsService.create(files, body);
+
+    result.files.forEach((doc) => {
+      this.runOcr(doc.id).catch((err) => {
+        console.error(`Ошибка при фоновой обработке документа ${doc.id}:`, err);
+      });
+    });
+
+    return result;
   }
 
   @Post(':id/run-ocr')
