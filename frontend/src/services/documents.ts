@@ -49,7 +49,7 @@ export const documentsService = {
   },
 
   // Получить OCR результат
-  async runOcr(id: string): Promise<OcrResult> {
+  async runOcr(id: string): Promise<any> {
     const response = await api.post(`/documents/${id}/run-ocr`)
     return response.data
   },
