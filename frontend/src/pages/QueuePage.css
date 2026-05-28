@@ -1,0 +1,249 @@
+.queue-page {
+  background: #f3f5f9;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.queue-panel {
+  width: 100%;
+  max-width: 850px;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 25px 45px rgba(0, 10, 30, 0.08);
+  padding: 2rem 2rem 2.2rem;
+}
+
+/* Заголовок */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.8rem;
+}
+
+.title-section h2 {
+  font-size: 1.8rem;
+  font-weight: 650;
+  color: #0a1a2f;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  background: #e7edfe;
+  color: #153b7a;
+  padding: 0.25rem 0.9rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  background: #f7f9fd;
+  padding: 0.5rem 1.2rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 10px;
+  background: #2d6ee0;
+  display: inline-block;
+}
+
+.progress-dot.waiting {
+  background: #f59e0b;
+}
+
+/* Список */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 1.8rem 0 2rem;
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9fafc;
+  border-radius: 18px;
+  padding: 1rem 1.3rem;
+  border: 1px solid #edf0f5;
+  transition: all 0.2s;
+  flex-wrap: wrap;
+}
+
+.queue-item:hover {
+  background: #ffffff;
+  border-color: #ccd9f0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.02);
+}
+
+.doc-info {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex: 2;
+  min-width: 200px;
+}
+
+.doc-icon {
+  font-size: 1.6rem;
+  background: #eef2f8;
+  border-radius: 12px;
+  padding: 0.3rem 0.6rem;
+}
+
+.doc-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-name {
+  font-weight: 600;
+  color: #111c30;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.doc-meta {
+  font-size: 0.75rem;
+  color: #5e6f8d;
+  display: flex;
+  gap: 0.7rem;
+}
+
+/* Правая часть элемента */
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+/* Бейдж статуса */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #eaf1fd;
+  padding: 0.3rem 0.9rem;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.processing {
+  background: #fff7e0;
+  color: #b6560b;
+}
+
+.status-badge.completed {
+  background: #e0f2e4;
+  color: #1c6232;
+}
+
+.status-badge.waiting {
+  background: #f1f3f6;
+  color: #424e64;
+}
+
+/* Прогресс-бар */
+.progress-bar {
+  width: 100px;
+  height: 6px;
+  background: #dee5f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+
+/* Кнопки */
+.icon-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 10px;
+  color: #64748b;
+  transition: background 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  background: #edf2f9;
+  color: #0f1e3a;
+}
+
+.remove-btn:hover {
+  color: #c92a2a;
+  background: #ffe9e9;
+}
+
+.refresh-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 14px;
+  padding: 0.8rem 1.7rem;
+  font-weight: 600;
+  background: white;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #dce2ec;
+}
+
+.btn-primary {
+  background: #0e2647;
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #1c3865;
+}
+
+.empty-queue {
+  text-align: center;
+  padding: 2.5rem;
+  color: #6d7b93;
+  font-style: italic;
+  background: #fafbfd;
+  border-radius: 24px;
+}
