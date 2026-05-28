@@ -1,43 +1,15 @@
 import api from './api'
 
-export interface Driver {
-  name: string
-  employee_number: string
-}
-
-export interface Vehicle {
-  model: string
-  license_plate: string
-}
-
-export interface Mileage {
-  odometer_start: number
-  odometer_end: number
-  calculated: number
-}
-
-export interface Fuel {
-  start_balance: number
-  issued: number
-  end_balance: number
-  deviation_percent: number
+export interface DocumentField {
+  fieldKey: string
+  fieldLabel: string
+  recognizedValue: string
+  confidence?: number
 }
 
 export interface Anomaly {
   type: string
   severity: string
-}
-
-export interface OcrResult {
-  document_id: string
-  date: string
-  organization: string
-  driver: Driver
-  vehicle: Vehicle
-  mileage: Mileage
-  fuel: Fuel
-  anomalies: Anomaly[]
-  ocr_accuracy?: number
 }
 
 export interface Document {
@@ -59,6 +31,8 @@ export interface Document {
   confirmedById: string | null
   createdAt: string
   updatedAt: string
+  fields?: DocumentField[]
+  anomalies?: Anomaly[]
 }
 
 export const documentsService = {
@@ -75,18 +49,8 @@ export const documentsService = {
   },
 
   // Получить OCR результат
-  async getOcrResult(id: string): Promise<OcrResult | null> {
-    try {
-      const response = await api.get(`/documents/${id}/ocr`)
-      return response.data
-    } catch {
-      return null
-    }
-  },
-
-  // Запустить OCR обработку
   async runOcr(id: string): Promise<OcrResult> {
-    const response = await api.post(`/documents/${id}/ocr`)
+    const response = await api.post(`/documents/${id}/run-ocr`)
     return response.data
   },
 

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getQueue, removeFromQueue, clearCompleted } from '../services/api';
 import type { QueueDocument } from '../services/api';
 import './QueuePage.css';
 
 const QueuePage = () => {
+  const navigate = useNavigate();
   // Список документов в очереди
   const [documents, setDocuments] = useState<QueueDocument[]>([]);
   // Состояние загрузки
@@ -128,7 +130,8 @@ const QueuePage = () => {
               const statusInfo = getStatusInfo(doc.status);
               return (
                 <div key={doc.id} className="queue-item">
-                  <div className="doc-info">
+                  <div className="doc-info"
+                    onClick={() => navigate(`/documents/${doc.id}`)}>
                     <span className="doc-icon">Ф</span>
                     <div className="doc-details">
                       <span className="doc-name" title={doc.name}>{doc.name}</span>
@@ -144,7 +147,9 @@ const QueuePage = () => {
                     )}
                     <button
                       className="icon-btn remove-btn"
-                      onClick={() => handleRemove(doc.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(doc.id)}}
                       title="Удалить"
                     >
                       &times;
