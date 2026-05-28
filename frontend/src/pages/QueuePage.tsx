@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getQueue } from '../services/api';
 import type { QueueDocument } from '../services/api';
 import './QueuePage.css';
 
 const QueuePage = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<QueueDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const fetchQueueRef = useRef<() => Promise<void>>(() => Promise.resolve());
@@ -11,14 +13,27 @@ const QueuePage = () => {
   const fetchQueue = useCallback(async () => {
     try {
       const response = await getQueue();
-      setDocuments(response.data);
+      const mappedData: QueueDocument[] = response.data.map((doc: any) => ({
+        id: doc.id,
+        name: doc.originalFileName || 'Неизвестный файл',
+        size: doc.fileSize,
+        status: doc.ocrStatus === 'completed' ? 'completed' 
+              : doc.ocrStatus === 'error' ? 'error'
+              : doc.ocrStatus === 'processing' ? 'processing'
+              : 'waiting',
+        progress: doc.ocrStatus === 'completed' ? 100 : 45,
+        added: doc.createdAt 
+            ? new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : ''
+      }));
+
+      setDocuments(mappedData);
     } catch (err) {
       console.error('Ошибка загрузки очереди:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
-
   useEffect(() => {
     fetchQueueRef.current = fetchQueue;
   }, [fetchQueue]);
@@ -71,7 +86,9 @@ const QueuePage = () => {
               const statusInfo = getStatusInfo(doc.status);
               return (
                 <div key={doc.id} className="queue-item">
-                  <div className="doc-info">
+                  <div className="doc-info"
+                  onClick={() => navigate(`/documents/${doc.id}`)}
+                  style={{ cursor: 'pointer' }}>
                     <span className="doc-icon">Ф</span>
                     <div className="doc-details">
                       <span className="doc-name" title={doc.name}>{doc.name}</span>

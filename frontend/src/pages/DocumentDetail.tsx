@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { documentsService, Document, OcrResult } from '../services/documents'
+import { documentsService, Document } from '../services/documents'
 
 const DocumentDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [document, setDocument] = useState<Document | null>(null)
-  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [runningOcr, setRunningOcr] = useState(false)
   const [error, setError] = useState('')
@@ -14,7 +13,6 @@ const DocumentDetail = () => {
   useEffect(() => {
     if (id) {
       loadDocument()
-      loadOcrResult()
     }
   }, [id])
 
@@ -30,20 +28,10 @@ const DocumentDetail = () => {
     }
   }
 
-  const loadOcrResult = async () => {
-    try {
-      const result = await documentsService.getOcrResult(id!)
-      setOcrResult(result)
-    } catch (err) {
-      console.error('Ошибка загрузки OCR:', err)
-    }
-  }
-
   const handleRunOcr = async () => {
     try {
       setRunningOcr(true)
-      const result = await documentsService.runOcr(id!)
-      setOcrResult(result)
+      await documentsService.runOcr(id!)
       await loadDocument()
     } catch (err) {
       console.error('Ошибка OCR:', err)
@@ -136,48 +124,26 @@ const DocumentDetail = () => {
         </div>
 
         {/* OCR результат */}
-        {ocrResult ? (
-          <>
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>📄 Распознанные данные</h2>
-              <div style={styles.infoGrid}>
-                <div><strong>Номер документа:</strong> {ocrResult.document_id}</div>
-                <div><strong>Дата:</strong> {ocrResult.date}</div>
-                <div><strong>Организация:</strong> {ocrResult.organization}</div>
-                <div><strong>Водитель:</strong> {ocrResult.driver.name}</div>
-                <div><strong>Табельный номер:</strong> {ocrResult.driver.employee_number}</div>
-                <div><strong>Автомобиль:</strong> {ocrResult.vehicle.model}</div>
-                <div><strong>Госномер:</strong> {ocrResult.vehicle.license_plate}</div>
-              </div>
-            </div>
-
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>⛽ Показатели</h2>
-              <div style={styles.infoGrid}>
-                <div><strong>Одометр (начало):</strong> {ocrResult.mileage.odometer_start} км</div>
-                <div><strong>Одометр (конец):</strong> {ocrResult.mileage.odometer_end} км</div>
-                <div><strong>Пробег:</strong> {ocrResult.mileage.calculated} км</div>
-                <div><strong>Топливо (начало):</strong> {ocrResult.fuel.start_balance} л</div>
-                <div><strong>Топливо (выдано):</strong> {ocrResult.fuel.issued} л</div>
-                <div><strong>Топливо (остаток):</strong> {ocrResult.fuel.end_balance} л</div>
-                <div>
-                  <strong>Отклонение по топливу:</strong> 
-                  <span style={{ color: Math.abs(ocrResult.fuel.deviation_percent) > 10 ? '#ef4444' : '#10b981' }}>
-                    {ocrResult.fuel.deviation_percent}%
-                  </span>
+        {document.fields && document.fields.length > 0 ? (
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>📄 Распознанные данные</h2>
+            <div style={styles.infoGrid}>
+              {document.fields.map(field => (
+                <div key={field.fieldKey}>
+                  <strong>{field.fieldLabel}:</strong> {field.recognizedValue}
                 </div>
-              </div>
+              ))}
             </div>
-          </>
+          </div>
         ) : (
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>🔍 Распознавание</h2>
             <p style={{ color: '#6b7280' }}>
               {document.ocrStatus === 'pending' && 'Документ ожидает распознавания'}
               {document.ocrStatus === 'processing' && 'Распознавание выполняется...'}
-              {document.ocrStatus === 'failed' && 'Ошибка при распознавании'}
+              {document.ocrStatus === 'error' && 'Ошибка при распознавании'}
             </p>
-            {document.ocrStatus === 'pending' && (
+            {document.ocrStatus !== 'completed' && (
               <button onClick={handleRunOcr} disabled={runningOcr} style={styles.runOcrButton}>
                 {runningOcr ? 'Запуск...' : '🚀 Запустить распознавание'}
               </button>
@@ -186,10 +152,10 @@ const DocumentDetail = () => {
         )}
 
         {/* Аномалии */}
-        {ocrResult?.anomalies && ocrResult.anomalies.length > 0 && (
+        {document.anomalies && document.anomalies.length > 0 && (
           <div style={styles.section}>
             <h2 style={styles.anomaliesTitle}>⚠️ Аномалии</h2>
-            {ocrResult.anomalies.map((anomaly, index) => (
+            {document.anomalies.map((anomaly, index) => (
               <div key={index} style={{ ...styles.anomalyCard, borderLeftColor: getSeverityColor(anomaly.severity) }}>
                 <div><strong>{anomaly.type}</strong></div>
                 <div style={styles.anomalySeverity}>Серьёзность: {anomaly.severity}</div>
