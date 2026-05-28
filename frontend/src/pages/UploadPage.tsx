@@ -1,20 +1,22 @@
-
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { uploadDocuments } from '../services/api';
 import './UploadPage.css';
 
 const UploadPage = () => {
   // Файлы, выбранные пользователем
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   // Флаг перетаскивания над зоной
   const [isDragover, setIsDragover] = useState(false);
   // Сообщение пользователю
   const [message, setMessage] = useState({ text: '', isError: false });
+  // Флаг загрузки
+  const [isUploading, setIsUploading] = useState(false);
   // Ссылка на скрытый input
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Добавление файлов в список
-  const addFiles = useCallback((files) => {
-    const newFiles = Array.from(files).filter(file => file.size > 0);
+  const addFiles = useCallback((files: FileList | File[]) => {
+    const newFiles = Array.from(files).filter((file: File) => file.size > 0);
     if (newFiles.length === 0) return;
 
     setSelectedFiles(prev => [...prev, ...newFiles]);
@@ -22,7 +24,7 @@ const UploadPage = () => {
   }, []);
 
   // Удаление одного файла по индексу
-  const removeFile = useCallback((index) => {
+  const removeFile = useCallback((index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setMessage({ text: '', isError: false });
   }, []);
@@ -34,22 +36,36 @@ const UploadPage = () => {
     setMessage({ text: 'Список файлов очищен', isError: false });
   }, [selectedFiles.length]);
 
-  // Имитация загрузки на сервер
-  const handleUpload = useCallback(() => {
+  // === Загрузка файлов на сервер ===
+  const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       setMessage({ text: 'Выберите хотя бы один файл для загрузки', isError: true });
       return;
     }
 
-    const fileNames = selectedFiles.map(f => f.name).join(', ');
-    setMessage({ text: `Загружено ${selectedFiles.length} файл(ов): ${fileNames}`, isError: false });
+    setIsUploading(true);
+    setMessage({ text: '', isError: false });
 
-    // Очищаем список после загрузки
-    setTimeout(() => setSelectedFiles([]), 1500);
-  }, [selectedFiles]);
+    try {
+      const response = await uploadDocuments(selectedFiles);
+      setMessage({
+        text: `Загружено ${response.data.files.length} файл(ов)`,
+        isError: false
+      });
+      setSelectedFiles([]);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setMessage({
+        text: error.response?.data?.error || 'Ошибка при загрузке файлов',
+        isError: true
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Форматирование размера файла
-  const formatSize = (bytes) => {
+  const formatSize = (bytes: number): string => {
     if (bytes > 1024 * 1024) {
       return `${(bytes / (1024 * 1024)).toFixed(2)} МБ`;
     }
@@ -57,18 +73,21 @@ const UploadPage = () => {
   };
 
   // Обработчики drag & drop
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragover(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragover(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragover(false);
     if (e.dataTransfer.files.length > 0) {
       addFiles(e.dataTransfer.files);
@@ -76,11 +95,11 @@ const UploadPage = () => {
   };
 
   // Обработчик выбора через input
-  const handleFileSelect = (e) => {
-    if (e.target.files.length > 0) {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
       addFiles(e.target.files);
     }
-    e.target.value = ''; // Сброс, чтобы можно было выбрать тот же файл повторно
+    e.target.value = '';
   };
 
   return (
@@ -89,13 +108,12 @@ const UploadPage = () => {
         <h1>Загрузка документов</h1>
         <div className="subtitle">Добавьте PDF, DOCX, XLSX или изображения</div>
 
-        {/* Зона перетаскивания */}
         <div
           className={`drop-zone ${isDragover ? 'dragover' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current.click()}
+          onClick={() => fileInputRef.current?.click()}
         >
           <div className="upload-icon">&#128194;</div>
           <div className="drop-text">Перетащите файлы сюда</div>
@@ -110,7 +128,6 @@ const UploadPage = () => {
           />
         </div>
 
-        {/* Список выбранных файлов */}
         <div className="selected-files">
           {selectedFiles.length === 0 ? (
             <div className="empty-files">Нет выбранных файлов</div>
@@ -127,6 +144,7 @@ const UploadPage = () => {
                     className="remove-file"
                     onClick={(e) => { e.stopPropagation(); removeFile(index); }}
                     aria-label="Удалить файл"
+                    disabled={isUploading}
                   >
                     &times;
                   </button>
@@ -136,13 +154,23 @@ const UploadPage = () => {
           )}
         </div>
 
-        {/* Кнопки действий */}
         <div className="actions">
-          <button className="btn btn-outline" onClick={clearAll}>Очистить</button>
-          <button className="btn btn-primary" onClick={handleUpload}>Загрузить документы</button>
+          <button
+            className="btn btn-outline"
+            onClick={clearAll}
+            disabled={isUploading}
+          >
+            Очистить
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleUpload}
+            disabled={isUploading || selectedFiles.length === 0}
+          >
+            {isUploading ? 'Загрузка...' : 'Загрузить документы'}
+          </button>
         </div>
 
-        {/* Сообщение */}
         {message.text && (
           <div className={`message ${message.isError ? 'error' : ''}`}>
             {message.text}

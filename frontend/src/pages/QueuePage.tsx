@@ -1,29 +1,84 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getQueue, removeFromQueue, clearCompleted } from '../services/api';
+import type { QueueDocument } from '../services/api';
 import './QueuePage.css';
 
 const QueuePage = () => {
   // Список документов в очереди
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocuments] = useState<QueueDocument[]>([]);
+  // Состояние загрузки
+  const [isLoading, setIsLoading] = useState(true);
+  // Ref для хранения функции fetchQueue без пересоздания
+  const fetchQueueRef = useRef<() => Promise<void>>(null!);
 
-  // Удаление одного документа
-  const removeDocument = useCallback((id) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id));
+  // === Загрузка очереди с сервера ===
+  const fetchQueue = useCallback(async () => {
+    try {
+      const response = await getQueue();
+      setDocuments(response.data);
+    } catch (err) {
+      console.error('Ошибка загрузки очереди:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Очистка завершённых
-  const clearCompleted = useCallback(() => {
-    setDocuments(prev => prev.filter(doc => doc.status !== 'completed'));
-  }, []);
+  // Сохраняем fetchQueue в ref, чтобы избежать проблем с зависимостями
+  useEffect(() => {
+    fetchQueueRef.current = fetchQueue;
+  }, [fetchQueue]);
+
+  // Первая загрузка + автообновление каждые 3 секунды
+  useEffect(() => {
+    // Первая загрузка
+    fetchQueueRef.current?.();
+
+    // Автообновление
+    const interval = setInterval(() => {
+      fetchQueueRef.current?.();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []); // Пустой массив зависимостей — выполняется один раз
+
+  // === Удаление одного документа ===
+  const handleRemove = async (id: string) => {
+    try {
+      await removeFromQueue(id);
+      setDocuments(prev => prev.filter(doc => doc.id !== id));
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
+      fetchQueue();
+    }
+  };
+
+  // === Очистка завершённых ===
+  const handleClearCompleted = async () => {
+    try {
+      await clearCompleted();
+      setDocuments(prev => prev.filter(doc => doc.status !== 'completed'));
+    } catch (err) {
+      console.error('Ошибка очистки:', err);
+      fetchQueue();
+    }
+  };
+
+  // === Ручное обновление ===
+  const handleRefresh = () => {
+    setIsLoading(true);
+    fetchQueue();
+  };
 
   // Статистика
   const activeCount = documents.filter(d => d.status === 'processing').length;
   const waitingCount = documents.filter(d => d.status === 'waiting').length;
 
   // Получение текста и класса статуса
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status: QueueDocument['status']) => {
     switch (status) {
       case 'processing': return { className: 'processing', text: 'Обработка' };
       case 'completed': return { className: 'completed', text: 'Готово' };
+      case 'error': return { className: 'error', text: 'Ошибка' };
       default: return { className: 'waiting', text: 'Ожидание' };
     }
   };
@@ -31,7 +86,6 @@ const QueuePage = () => {
   return (
     <div className="queue-page">
       <div className="queue-panel">
-        {/* Заголовок и статистика */}
         <div className="header">
           <div className="title-section">
             <h2>
@@ -49,9 +103,10 @@ const QueuePage = () => {
           </div>
         </div>
 
-        {/* Список очереди */}
         <div className="queue-list">
-          {documents.length === 0 ? (
+          {isLoading ? (
+            <div className="empty-queue">Загрузка очереди...</div>
+          ) : documents.length === 0 ? (
             <div className="empty-queue">Очередь пуста. Загрузите документы.</div>
           ) : (
             documents.map(doc => {
@@ -74,7 +129,7 @@ const QueuePage = () => {
                     )}
                     <button
                       className="icon-btn remove-btn"
-                      onClick={() => removeDocument(doc.id)}
+                      onClick={() => handleRemove(doc.id)}
                       title="Удалить"
                     >
                       &times;
@@ -86,10 +141,9 @@ const QueuePage = () => {
           )}
         </div>
 
-        {/* Кнопки действий */}
         <div className="refresh-section">
-          <button className="btn" onClick={() => {}}>Обновить очередь</button>
-          <button className="btn btn-primary" onClick={clearCompleted}>Очистить завершённые</button>
+          <button className="btn" onClick={handleRefresh}>Обновить очередь</button>
+          <button className="btn btn-primary" onClick={handleClearCompleted}>Очистить завершённые</button>
         </div>
       </div>
     </div>
