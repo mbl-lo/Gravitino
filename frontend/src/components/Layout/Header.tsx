@@ -47,7 +47,7 @@ const Header = () => {
         </div>
 
         <div style={styles.userInfo}>
-          <span style={styles.userName}>{user?.name || 'Оператор Иванов'}</span>
+          <span style={styles.userName}>{user?.fullName || 'Оператор'}</span>
           <span style={styles.userStatus}>Активен</span>
         </div>
 
