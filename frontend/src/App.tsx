@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import DocumentDetail from './pages/DocumentDetail'  
 import Layout from './components/Layout/Layout'
 import PlaceholderPage from './components/PlaceholderPage'
 
@@ -57,6 +58,12 @@ function AppRoutes() {
             icon="📁"
             description="Все обработанные документы"
           />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/documents/:id" element={
+        <ProtectedRoute>
+          <DocumentDetail />
         </ProtectedRoute>
       } />
       
