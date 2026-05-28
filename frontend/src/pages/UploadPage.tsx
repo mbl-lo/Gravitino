@@ -106,8 +106,7 @@ const UploadPage = () => {
     <div className="upload-page">
       <div className="upload-card">
         <h1>Загрузка документов</h1>
-        <div className="subtitle">Добавьте PDF, DOCX, XLSX или изображения</div>
-
+        <div className="subtitle">Поддерживаются форматы: JPG, PNG, PDF, HEIC</div>
         <div
           className={`drop-zone ${isDragover ? 'dragover' : ''}`}
           onDragOver={handleDragOver}
@@ -123,7 +122,7 @@ const UploadPage = () => {
             ref={fileInputRef}
             className="file-input"
             multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
+            accept=".jpg,.jpeg,.png,.pdf,.heic"
             onChange={handleFileSelect}
           />
         </div>
