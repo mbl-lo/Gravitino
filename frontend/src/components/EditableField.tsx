@@ -51,11 +51,13 @@ const EditableField = ({ documentId, fieldKey, fieldLabel, value, onUpdate }: Ed
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             style={{
-              padding: '6px 10px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
+              padding: '8px 12px',
+              border: '1px solid #3b82f6',
+              borderRadius: '8px',
               fontSize: '14px',
-              width: '200px',
+              width: '250px',
+              outline: 'none',
+              backgroundColor: '#fff',
             }}
             autoFocus
           />
@@ -63,13 +65,13 @@ const EditableField = ({ documentId, fieldKey, fieldLabel, value, onUpdate }: Ed
             onClick={handleSave}
             disabled={isLoading}
             style={{
-              padding: '6px 12px',
+              padding: '6px 14px',
               backgroundColor: '#10b981',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '12px',
+              fontSize: '13px',
             }}
           >
             {isLoading ? '...' : '✅ Сохранить'}
@@ -77,13 +79,13 @@ const EditableField = ({ documentId, fieldKey, fieldLabel, value, onUpdate }: Ed
           <button
             onClick={handleCancel}
             style={{
-              padding: '6px 12px',
+              padding: '6px 14px',
               backgroundColor: '#6b7280',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '12px',
+              fontSize: '13px',
             }}
           >
             ✖ Отмена
@@ -99,16 +101,24 @@ const EditableField = ({ documentId, fieldKey, fieldLabel, value, onUpdate }: Ed
       onClick={() => setIsEditing(true)}
       style={{
         cursor: 'pointer',
-        padding: '4px 8px',
+        padding: '6px 10px',
         borderRadius: '6px',
-        transition: 'background 0.2s',
+        border: '1px solid #e5e7eb',
+        backgroundColor: '#f9fafb',
+        transition: 'all 0.2s',
         display: 'inline-block',
+        minWidth: '180px',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = '#3b82f6'
+        e.currentTarget.style.backgroundColor = '#eff6ff'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = '#e5e7eb'
+        e.currentTarget.style.backgroundColor = '#f9fafb'
+      }}
     >
       {value || '—'}
-      <span style={{ marginLeft: '8px', fontSize: '12px', color: '#9ca3af' }}>✏️</span>
     </div>
   )
 }

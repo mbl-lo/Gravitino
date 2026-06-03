@@ -72,26 +72,26 @@ const DocumentDetail = () => {
 
   const getValidations = () => {
     const validations = []
-    
+
     validations.push({ type: 'success', text: 'Пробег рассчитан корректно' })
-    
+
     if (document?.hasAnomalies) {
       validations.push({ type: 'warning', text: 'Расход топлива выше нормы на 18%' })
     }
-    
+
     const mechanicSignature = getFieldValue('signature_mechanic')
     if (mechanicSignature === 'Не распознана') {
       validations.push({ type: 'error', text: 'Подпись механика не распознана' })
     } else {
       validations.push({ type: 'success', text: 'Подпись механика распознана' })
     }
-    
+
     validations.push({ type: 'success', text: 'Время возвращения позже времени выезда' })
-    
+
     return validations
   }
 
-    // Функция для обновления полей документа после редактирования
+  // Функция для обновления полей документа после редактирования
   const handleFieldUpdate = (fieldKey: string, newValue: string) => {
     setDocument((prev) => {
       if (!prev) return prev
@@ -198,329 +198,356 @@ const DocumentDetail = () => {
         <div style={styles.rightColumn}>
           {/* Основные данные */}
           <div style={styles.section}>
-  <h2 style={styles.sectionTitle}>Основные данные</h2>
-  <div style={styles.infoGrid}>
-    <div>
-      <strong>ID документа:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="document_number"
-        fieldLabel="ID документа"
-        value={documentNumber}
-        onUpdate={(newValue) => handleFieldUpdate('document_number', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Дата:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="date"
-        fieldLabel="Дата"
-        value={date}
-        onUpdate={(newValue) => handleFieldUpdate('date', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Организация:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="organization"
-        fieldLabel="Организация"
-        value={organization}
-        onUpdate={(newValue) => handleFieldUpdate('organization', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Подразделение:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="division"
-        fieldLabel="Подразделение"
-        value={division}
-        onUpdate={(newValue) => handleFieldUpdate('division', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Водитель:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="driver_name"
-        fieldLabel="Водитель"
-        value={driverName}
-        onUpdate={(newValue) => handleFieldUpdate('driver_name', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Табельный номер:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="driver_number"
-        fieldLabel="Табельный номер"
-        value={driverNumber}
-        onUpdate={(newValue) => handleFieldUpdate('driver_number', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Автомобиль:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="vehicle_model"
-        fieldLabel="Автомобиль"
-        value={vehicleModel}
-        onUpdate={(newValue) => handleFieldUpdate('vehicle_model', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Госномер:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="vehicle_plate"
-        fieldLabel="Госномер"
-        value={vehiclePlate}
-        onUpdate={(newValue) => handleFieldUpdate('vehicle_plate', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Маршрут:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="route"
-        fieldLabel="Маршрут"
-        value={getFieldValue('route')}
-        onUpdate={(newValue) => handleFieldUpdate('route', newValue)}
-      />
-    </div>
-  </div>
-</div>
-
-          <div style={styles.section}>
-  <h2 style={styles.sectionTitle}>Пробег</h2>
-  <div style={styles.infoGrid}>
-    <div>
-      <strong>Спидометр при выезде:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="odometer_start"
-        fieldLabel="Спидометр при выезде"
-        value={odometerStart}
-        onUpdate={(newValue) => handleFieldUpdate('odometer_start', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Спидометр при возвращении:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="odometer_end"
-        fieldLabel="Спидометр при возвращении"
-        value={odometerEnd}
-        onUpdate={(newValue) => handleFieldUpdate('odometer_end', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Расчетный пробег:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="mileage"
-        fieldLabel="Расчетный пробег"
-        value={odometerEnd !== '—' && odometerStart !== '—' 
-          ? `${parseInt(odometerEnd) - parseInt(odometerStart)} км` 
-          : '—'}
-        onUpdate={(newValue) => handleFieldUpdate('mileage', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Пробег по маршруту:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="route_distance"
-        fieldLabel="Пробег по маршруту"
-        value={getFieldValue('route_distance') || '—'}
-        onUpdate={(newValue) => handleFieldUpdate('route_distance', newValue)}
-      />
-    </div>
-  </div>
-</div>
-
-         <div style={styles.section}>
-  <h2 style={styles.sectionTitle}>Топливо</h2>
-  <div style={styles.infoGrid}>
-    <div>
-      <strong>Остаток топлива при выезде:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_start"
-        fieldLabel="Остаток топлива при выезде"
-        value={fuelStart}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_start', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Выдано топлива:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_issued"
-        fieldLabel="Выдано топлива"
-        value={getFieldValue('fuel_issued')}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_issued', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Остаток топлива при возвращении:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_end"
-        fieldLabel="Остаток топлива при возвращении"
-        value={fuelEnd}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_end', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Расчетный расход:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_consumption"
-        fieldLabel="Расчетный расход"
-        value={fuelConsumption}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_consumption', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Норма расхода:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_rate"
-        fieldLabel="Норма расхода"
-        value={fuelRate}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_rate', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Отклонение:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="fuel_deviation"
-        fieldLabel="Отклонение"
-        value={fuelDeviation}
-        onUpdate={(newValue) => handleFieldUpdate('fuel_deviation', newValue)}
-      />
-    </div>
-  </div>
-</div>
-
-          <div style={styles.section}>
-  <h2 style={styles.sectionTitle}>Время работы</h2>
-  <div style={styles.infoGrid}>
-    <div>
-      <strong>Время выезда:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="departure_time"
-        fieldLabel="Время выезда"
-        value={departureTime}
-        onUpdate={(newValue) => handleFieldUpdate('departure_time', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Время возвращения:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="arrival_time"
-        fieldLabel="Время возвращения"
-        value={arrivalTime}
-        onUpdate={(newValue) => handleFieldUpdate('arrival_time', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Общее время работы:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="total_hours"
-        fieldLabel="Общее время работы"
-        value={getFieldValue('total_hours') || '—'}
-        onUpdate={(newValue) => handleFieldUpdate('total_hours', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Время простоя:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="downtime_hours"
-        fieldLabel="Время простоя"
-        value={getFieldValue('downtime_hours') || '—'}
-        onUpdate={(newValue) => handleFieldUpdate('downtime_hours', newValue)}
-      />
-    </div>
-  </div>
-</div>
-
-         <div style={styles.section}>
-  <h2 style={styles.sectionTitle}>Подписи и отметки</h2>
-  <div style={styles.infoGrid}>
-    <div>
-      <strong>Подпись водителя:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="signature_driver"
-        fieldLabel="Подпись водителя"
-        value={getFieldValue('signature_driver') === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
-        onUpdate={(newValue) => handleFieldUpdate('signature_driver', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Подпись механика:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="signature_mechanic"
-        fieldLabel="Подпись механика"
-        value={signatureMechanic === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
-        onUpdate={(newValue) => handleFieldUpdate('signature_mechanic', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Подпись диспетчера:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="signature_dispatcher"
-        fieldLabel="Подпись диспетчера"
-        value={signatureDispatcher === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
-        onUpdate={(newValue) => handleFieldUpdate('signature_dispatcher', newValue)}
-      />
-    </div>
-    <div>
-      <strong>Медосмотр пройден:</strong>{' '}
-      <EditableField
-        documentId={document.id}
-        fieldKey="medical_check"
-        fieldLabel="Медосмотр пройден"
-        value={medicalCheck === 'Да' ? '✅ Да' : '❌ Нет'}
-        onUpdate={(newValue) => handleFieldUpdate('medical_check', newValue)}
-      />
-    </div>
-  </div>
-</div>
-
-          {/* Проверка данных */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Проверка данных</h2>
-            <div style={styles.validationsList}>
-              {validations.map((v, i) => (
-                <div key={i} style={styles.validationItem}>
-                  <span style={styles.validationIcon}>
-                    {v.type === 'success' && '✅'}
-                    {v.type === 'warning' && '⚠️'}
-                    {v.type === 'error' && '❌'}
-                  </span>
-                  <span style={styles.validationText}>{v.text}</span>
+            <h2 style={styles.sectionTitle}>Основные данные</h2>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>ID документа</div>
+                <div style={styles.infoValue}>{documentNumber}</div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Дата</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="date"
+                    fieldLabel="Дата"
+                    value={date}
+                    onUpdate={(newValue) => handleFieldUpdate('date', newValue)}
+                  />
                 </div>
-              ))}
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Организация</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="organization"
+                    fieldLabel="Организация"
+                    value={organization}
+                    onUpdate={(newValue) => handleFieldUpdate('organization', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Подразделение</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="division"
+                    fieldLabel="Подразделение"
+                    value={division}
+                    onUpdate={(newValue) => handleFieldUpdate('division', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Водитель</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="driver_name"
+                    fieldLabel="Водитель"
+                    value={driverName}
+                    onUpdate={(newValue) => handleFieldUpdate('driver_name', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Табельный номер</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="driver_number"
+                    fieldLabel="Табельный номер"
+                    value={driverNumber}
+                    onUpdate={(newValue) => handleFieldUpdate('driver_number', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Автомобиль</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="vehicle_model"
+                    fieldLabel="Автомобиль"
+                    value={vehicleModel}
+                    onUpdate={(newValue) => handleFieldUpdate('vehicle_model', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Госномер</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="vehicle_plate"
+                    fieldLabel="Госномер"
+                    value={vehiclePlate}
+                    onUpdate={(newValue) => handleFieldUpdate('vehicle_plate', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Год выпуска</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="year"
+                    fieldLabel="Год выпуска"
+                    value={getFieldValue('year') || '—'}
+                    onUpdate={(newValue) => handleFieldUpdate('year', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Маршрут</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="route"
+                    fieldLabel="Маршрут"
+                    value={getFieldValue('route')}
+                    onUpdate={(newValue) => handleFieldUpdate('route', newValue)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* ИИ-комментарий */}
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Пробег</h2>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Спидометр при выезде</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="odometer_start"
+                    fieldLabel="Спидометр при выезде"
+                    value={odometerStart}
+                    onUpdate={(newValue) => handleFieldUpdate('odometer_start', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Спидометр при возвращении</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="odometer_end"
+                    fieldLabel="Спидометр при возвращении"
+                    value={odometerEnd}
+                    onUpdate={(newValue) => handleFieldUpdate('odometer_end', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Расчетный пробег</div>
+                <div style={styles.infoValue}>
+                  {odometerEnd !== '—' && odometerStart !== '—'
+                    ? `${parseInt(odometerEnd) - parseInt(odometerStart)} км`
+                    : '—'}
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Пробег по маршруту</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="route_distance"
+                    fieldLabel="Пробег по маршруту"
+                    value={getFieldValue('route_distance') || '—'}
+                    onUpdate={(newValue) => handleFieldUpdate('route_distance', newValue)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Топливо</h2>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Остаток топлива при выезде</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="fuel_start"
+                    fieldLabel="Остаток топлива при выезде"
+                    value={fuelStart}
+                    onUpdate={(newValue) => handleFieldUpdate('fuel_start', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Выдано топлива</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="fuel_issued"
+                    fieldLabel="Выдано топлива"
+                    value={getFieldValue('fuel_issued')}
+                    onUpdate={(newValue) => handleFieldUpdate('fuel_issued', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Остаток топлива при возвращении</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="fuel_end"
+                    fieldLabel="Остаток топлива при возвращении"
+                    value={fuelEnd}
+                    onUpdate={(newValue) => handleFieldUpdate('fuel_end', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Расчетный расход</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="fuel_consumption"
+                    fieldLabel="Расчетный расход"
+                    value={fuelConsumption}
+                    onUpdate={(newValue) => handleFieldUpdate('fuel_consumption', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Норма расхода</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="fuel_rate"
+                    fieldLabel="Норма расхода"
+                    value={fuelRate}
+                    onUpdate={(newValue) => handleFieldUpdate('fuel_rate', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Отклонение</div>
+                <div style={styles.infoValue}>
+                  <span style={{ color: fuelDeviation.includes('+') ? '#ef4444' : '#10b981' }}>
+                    {fuelDeviation}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Время работы</h2>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Время выезда</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="departure_time"
+                    fieldLabel="Время выезда"
+                    value={departureTime}
+                    onUpdate={(newValue) => handleFieldUpdate('departure_time', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Время возвращения</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="arrival_time"
+                    fieldLabel="Время возвращения"
+                    value={arrivalTime}
+                    onUpdate={(newValue) => handleFieldUpdate('arrival_time', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Общее время работы</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="total_hours"
+                    fieldLabel="Общее время работы"
+                    value={getFieldValue('total_hours') || '—'}
+                    onUpdate={(newValue) => handleFieldUpdate('total_hours', newValue)}
+                  />
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Время простоя</div>
+                <div style={styles.infoValue}>
+                  <EditableField
+                    documentId={document.id}
+                    fieldKey="downtime_hours"
+                    fieldLabel="Время простоя"
+                    value={getFieldValue('downtime_hours') || '—'}
+                    onUpdate={(newValue) => handleFieldUpdate('downtime_hours', newValue)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Подписи и отметки</h2>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Подпись водителя</div>
+                <div style={styles.infoValue}>
+                  {getFieldValue('signature_driver') === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Подпись механика</div>
+                <div style={styles.infoValue}>
+                  {signatureMechanic === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Подпись диспетчера</div>
+                <div style={styles.infoValue}>
+                  {signatureDispatcher === 'Распознана' ? '✅ Распознана' : '❌ Не распознана'}
+                </div>
+              </div>
+              <div style={styles.infoRow}>
+                <div style={styles.infoLabel}>Медосмотр пройден</div>
+                <div style={styles.infoValue}>
+                  {medicalCheck === 'Да' ? '✅ Да' : '❌ Нет'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Проверка данных</h2>
+            <div style={styles.validationsList}>
+              <div style={styles.validationItem}>
+                <span style={styles.validationIcon}>✅</span>
+                <span style={styles.validationText}>Пробег рассчитан корректно</span>
+              </div>
+              <div style={styles.validationItem}>
+                <span style={styles.validationIcon}>⚠️</span>
+                <span style={styles.validationText}>Расход топлива выше нормы на 18%</span>
+              </div>
+              <div style={styles.validationItem}>
+                <span style={styles.validationIcon}>❌</span>
+                <span style={styles.validationText}>Подпись механика не распознана</span>
+              </div>
+              <div style={styles.validationItem}>
+                <span style={styles.validationIcon}>✅</span>
+                <span style={styles.validationText}>Время возвращения позже времени выезда</span>
+              </div>
+            </div>
+          </div>
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>ИИ-комментарий</h2>
             <p style={styles.commentText}>
-              Система обнаружила повышенный расход топлива относительно нормы. 
+              Система обнаружила повышенный расход топлива относительно нормы.
               Рекомендуется проверить маршрут, фактическую заправку и корректность показаний спидометра.
             </p>
           </div>
@@ -536,12 +563,12 @@ const styles = {
   breadcrumbLink: { color: '#3b82f6', textDecoration: 'none' },
   breadcrumbSeparator: { margin: '0 8px' },
   breadcrumbCurrent: { color: '#1f2937' },
-  
-  header: { 
-    display: 'flex', 
-    alignItems: 'center', 
+
+  header: {
+    display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '24px', 
+    marginBottom: '24px',
     flexWrap: 'wrap' as const,
     gap: '16px',
   },
@@ -553,7 +580,7 @@ const styles = {
   },
   title: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
   statusBadge: { display: 'inline-block', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', color: 'white' },
-  
+
   actions: {
     display: 'flex',
     gap: '12px',
@@ -592,42 +619,61 @@ const styles = {
     fontWeight: '500',
     transition: 'background 0.2s',
   },
-  
+
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280' },
   errorContainer: { textAlign: 'center' as const, padding: '48px' },
   errorText: { color: '#ef4444', marginBottom: '16px' },
   backButton: { padding: '8px 16px', backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer' },
-  
+
   twoColumns: { display: 'flex', gap: '32px', flexWrap: 'wrap' as const, alignItems: 'flex-start' },
   leftColumn: { flex: '1.2', minWidth: '300px' },
-  rightColumn: { 
-    flex: '1', 
-    minWidth: '400px', 
+  rightColumn: {
+    flex: '1',
+    minWidth: '400px',
     maxWidth: '650px',
     maxHeight: 'calc(100vh - 180px)',
     overflowY: 'auto' as const,
     paddingRight: '8px',
   },
-  
+
   imageContainer: { backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', textAlign: 'center' as const, position: 'sticky' as const, top: '24px' },
   documentImage: { maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' as const, borderRadius: '8px' },
   imagePlaceholder: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px', color: '#9ca3af' },
   imagePlaceholderIcon: { fontSize: '64px', marginBottom: '16px' },
   downloadLink: { color: '#3b82f6', textDecoration: 'none', marginTop: '12px' },
-  
-  section: { 
-    backgroundColor: 'white', 
-    borderRadius: '12px', 
-    padding: '20px', 
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+
+  section: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     marginBottom: '20px',
   },
   sectionTitle: { fontSize: '18px', fontWeight: '600', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' },
-  
-  infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px' },
-  dataTable: { width: '100%', borderCollapse: 'collapse' as const },
-  tableLabel: { padding: '8px 0', fontWeight: '500', color: '#6b7280', width: '200px' },
-  tableValue: { padding: '8px 0', color: '#1f2937' },
+
+  // НОВЫЕ СТИЛИ ДЛЯ ДВУХ КОЛОНОК
+  infoGrid: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '12px'
+  },
+  infoRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px',
+    flexWrap: 'wrap' as const,
+  },
+  infoLabel: {
+    width: '160px',
+    fontWeight: '500',
+    color: '#6b7280',
+    flexShrink: 0,
+  },
+  infoValue: {
+  flex: 1,
+  color: '#1f2937',
+},
+
   validationsList: { display: 'flex', flexDirection: 'column' as const, gap: '8px' },
   validationItem: { display: 'flex', alignItems: 'center', gap: '12px' },
   validationIcon: { fontSize: '18px' },
