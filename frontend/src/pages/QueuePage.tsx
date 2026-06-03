@@ -10,30 +10,60 @@ const QueuePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fetchQueueRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-  const fetchQueue = useCallback(async () => {
-    try {
-      const response = await getQueue();
-      const mappedData: QueueDocument[] = response.data.map((doc: any) => ({
-        id: doc.id,
-        name: doc.originalFileName || 'Неизвестный файл',
-        size: doc.fileSize,
-        status: doc.ocrStatus === 'completed' ? 'completed' 
-              : doc.ocrStatus === 'error' ? 'error'
-              : doc.ocrStatus === 'processing' ? 'processing'
-              : 'waiting',
-        progress: doc.ocrStatus === 'completed' ? 100 : 45,
-        added: doc.createdAt 
-            ? new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : ''
-      }));
-
-      setDocuments(mappedData);
-    } catch (err) {
-      console.error('Ошибка загрузки очереди:', err);
-    } finally {
-      setIsLoading(false);
+const fetchQueue = useCallback(async () => {
+  // ВРЕМЕННЫЕ ТЕСТОВЫЕ ДАННЫЕ (для проверки статусов)
+  const testDocuments = [
+    {
+      id: '1',
+      originalFileName: 'Документ ЗАГРУЖЕН.pdf',
+      fileSize: 1024,
+      status: 'uploaded',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      originalFileName: 'Документ ОБРАБАТЫВАЕТСЯ.pdf',
+      fileSize: 2048,
+      status: 'processing',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      originalFileName: 'Документ ТРЕБУЕТ ПРОВЕРКИ.pdf',
+      fileSize: 1536,
+      status: 'needs_review',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '4',
+      originalFileName: 'Документ ПОДТВЕРЖДЁН.pdf',
+      fileSize: 5120,
+      status: 'confirmed',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '5',
+      originalFileName: 'Документ ОШИБКА.pdf',
+      fileSize: 768,
+      status: 'error',
+      createdAt: new Date().toISOString()
     }
-  }, []);
+  ];
+
+  // Преобразуем тестовые данные в нужный формат
+  const mappedData: QueueDocument[] = testDocuments.map((doc) => ({
+    id: doc.id,
+    name: doc.originalFileName,
+    size: doc.fileSize,  // ← число, а не строка
+    status: doc.status as 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error',
+    progress: doc.status === 'processing' ? 45 : doc.status === 'confirmed' ? 100 : 0,
+    added: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }));
+
+  setDocuments(mappedData);
+  setIsLoading(false);
+}, []);
+
   useEffect(() => {
     fetchQueueRef.current = fetchQueue;
   }, [fetchQueue]);
@@ -45,14 +75,22 @@ const QueuePage = () => {
   }, []);
 
   const activeCount = documents.filter(d => d.status === 'processing').length;
-  const waitingCount = documents.filter(d => d.status === 'waiting').length;
+  const uploadedCount = documents.filter(d => d.status === 'uploaded').length;
 
   const getStatusInfo = (status: QueueDocument['status']) => {
     switch (status) {
-      case 'processing': return { className: 'processing', text: 'Обработка' };
-      case 'completed': return { className: 'completed', text: 'Готово' };
-      case 'error': return { className: 'error', text: 'Ошибка' };
-      default: return { className: 'waiting', text: 'Ожидание' };
+      case 'uploaded':
+        return { className: 'uploaded', text: 'Загружен' }
+      case 'processing':
+        return { className: 'processing', text: 'Обрабатывается' }
+      case 'needs_review':
+        return { className: 'needs_review', text: 'Требует проверки' }
+      case 'confirmed':
+        return { className: 'confirmed', text: 'Подтверждён' }
+      case 'error':
+        return { className: 'error', text: 'Ошибка' }
+      default:
+        return { className: 'uploaded', text: 'Загружен' }
     }
   };
 
@@ -71,7 +109,7 @@ const QueuePage = () => {
               <span className="progress-dot"></span> Активно: <strong>{activeCount}</strong>
             </span>
             <span className="stat-item">
-              <span className="progress-dot waiting"></span> Ожидают: <strong>{waitingCount}</strong>
+              <span className="progress-dot waiting"></span> Загружены: <strong>{uploadedCount}</strong>
             </span>
           </div>
         </div>
@@ -87,8 +125,8 @@ const QueuePage = () => {
               return (
                 <div key={doc.id} className="queue-item">
                   <div className="doc-info"
-                  onClick={() => navigate(`/documents/${doc.id}`)}
-                  style={{ cursor: 'pointer' }}>
+                    onClick={() => navigate(`/documents/${doc.id}`)}
+                    style={{ cursor: 'pointer' }}>
                     <span className="doc-icon">Ф</span>
                     <div className="doc-details">
                       <span className="doc-name" title={doc.name}>{doc.name}</span>

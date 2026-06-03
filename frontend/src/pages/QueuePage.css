@@ -142,32 +142,48 @@
   flex-wrap: wrap;
 }
 
-/* Бейдж статуса */
+/* ===== СТАТУСЫ (исправленные) ===== */
+
+/* Загружен */
+.status-badge.uploaded {
+  background-color: #f59e0b;
+  color: white;
+}
+
+/* Обрабатывается */
+.status-badge.processing {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Требует проверки */
+.status-badge.needs_review {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Подтверждён */
+.status-badge.confirmed {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Ошибка */
+.status-badge.error {
+  background-color: #dc2626;
+  color: white;
+}
+
+/* Общие стили для всех бейджей */
 .status-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: #eaf1fd;
   padding: 0.3rem 0.9rem;
   border-radius: 30px;
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
-}
-
-.status-badge.processing {
-  background: #fff7e0;
-  color: #b6560b;
-}
-
-.status-badge.completed {
-  background: #e0f2e4;
-  color: #1c6232;
-}
-
-.status-badge.waiting {
-  background: #f1f3f6;
-  color: #424e64;
 }
 
 /* Прогресс-бар */

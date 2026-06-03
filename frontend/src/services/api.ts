@@ -65,11 +65,13 @@ export const uploadDocuments = (files: File[]) => {
 // --- ОЧЕРЕДЬ ОБРАБОТКИ (QueuePage) ---
 
 /** Тип документа в очереди */
+// services/api.ts
+
 export interface QueueDocument {
   id: string
   name: string
-  size: string
-  status: 'waiting' | 'processing' | 'completed' | 'error'
+  size: number
+  status: 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error'  // ← обновлено
   progress: number
   added: string
 }
