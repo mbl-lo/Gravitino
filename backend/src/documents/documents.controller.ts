@@ -10,6 +10,7 @@ import {
   UploadedFiles,
   Body,
   BadRequestException,
+  Patch
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
@@ -123,5 +124,18 @@ export class DocumentsController {
     });
 
     return new StreamableFile(fileStream);
+  }
+
+  @Patch(':id/fields/:fieldKey')
+  async updateDocumentFields(
+    @Param('id') id: string,
+    @Param('fieldKey') fieldKey: string,
+    @Body('value') value: string,
+  ) {
+    if (value === undefined) {
+      throw new BadRequestException('Необходимо передать новое значение поля');
+  }
+
+  return this.documentsService.updateFields(id, fieldKey, value);
   }
 }

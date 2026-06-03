@@ -135,4 +135,20 @@ export class DocumentsService {
 
     return { ...ocr, savedFields: fields.length, status: 'processed', ocrStatus: 'completed' };
   }
+
+  async updateFields(documentId: string, fieldKey: string, newValue: string) {
+    await this.findOne(documentId);
+
+    const updatedFields = await this.prisma.documentField.update({
+      where: {
+        documentId_fieldKey: { documentId, fieldKey },
+      },
+      data: {
+        correctedValue: newValue,
+        isEdited: true,
+      },
+    });
+
+    return updatedFields;
+}
 }
