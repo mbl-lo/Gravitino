@@ -10,59 +10,51 @@ const QueuePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fetchQueueRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-const fetchQueue = useCallback(async () => {
-  // ВРЕМЕННЫЕ ТЕСТОВЫЕ ДАННЫЕ (для проверки статусов)
-  const testDocuments = [
-    {
-      id: '1',
-      originalFileName: 'Документ ЗАГРУЖЕН.pdf',
-      fileSize: 1024,
-      status: 'uploaded',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      originalFileName: 'Документ ОБРАБАТЫВАЕТСЯ.pdf',
-      fileSize: 2048,
-      status: 'processing',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
-      originalFileName: 'Документ ТРЕБУЕТ ПРОВЕРКИ.pdf',
-      fileSize: 1536,
-      status: 'needs_review',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '4',
-      originalFileName: 'Документ ПОДТВЕРЖДЁН.pdf',
-      fileSize: 5120,
-      status: 'confirmed',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '5',
-      originalFileName: 'Документ ОШИБКА.pdf',
-      fileSize: 768,
-      status: 'error',
-      createdAt: new Date().toISOString()
+  const fetchQueue = useCallback(async () => {
+    try {
+      const response = await getQueue();
+      const mappedData: QueueDocument[] = response.data.map((doc: any) => {
+        let displayStatus: 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error' = 'uploaded';
+
+        if (doc.status === 'processing') {
+          displayStatus = 'processing';
+        } else if (doc.status === 'needs_review') {
+          displayStatus = 'needs_review';
+        } else if (doc.status === 'confirmed') {
+          displayStatus = 'confirmed';
+        } else if (doc.status === 'error') {
+          displayStatus = 'error';
+        } else if (doc.status === 'processed') {
+          displayStatus = 'needs_review';
+        } else if (doc.status === 'uploaded') {
+          displayStatus = 'uploaded';
+        }
+
+        if (doc.ocrStatus === 'processing') {
+          displayStatus = 'processing';
+        } else if (doc.ocrStatus === 'error') {
+          displayStatus = 'error';
+        }
+
+        return {
+          id: doc.id,
+          name: doc.originalFileName || 'Неизвестный файл',
+          size: doc.fileSize,
+          status: displayStatus,
+          progress: displayStatus === 'processing' ? 45 : displayStatus === 'confirmed' ? 100 : 0,
+          added: doc.createdAt
+            ? new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : ''
+        };
+      });
+
+      setDocuments(mappedData);
+    } catch (err) {
+      console.error('Ошибка загрузки очереди:', err);
+    } finally {
+      setIsLoading(false);
     }
-  ];
-
-  // Преобразуем тестовые данные в нужный формат
-  const mappedData: QueueDocument[] = testDocuments.map((doc) => ({
-    id: doc.id,
-    name: doc.originalFileName,
-    size: doc.fileSize,  // ← число, а не строка
-    status: doc.status as 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error',
-    progress: doc.status === 'processing' ? 45 : doc.status === 'confirmed' ? 100 : 0,
-    added: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }));
-
-  setDocuments(mappedData);
-  setIsLoading(false);
-}, []);
+  }, []);
 
   useEffect(() => {
     fetchQueueRef.current = fetchQueue;
@@ -80,17 +72,17 @@ const fetchQueue = useCallback(async () => {
   const getStatusInfo = (status: QueueDocument['status']) => {
     switch (status) {
       case 'uploaded':
-        return { className: 'uploaded', text: 'Загружен' }
+        return { className: 'uploaded', text: 'Загружен' };
       case 'processing':
-        return { className: 'processing', text: 'Обрабатывается' }
+        return { className: 'processing', text: 'Распознаётся' };
       case 'needs_review':
-        return { className: 'needs_review', text: 'Требует проверки' }
+        return { className: 'needs_review', text: 'Требует проверки' };
       case 'confirmed':
-        return { className: 'confirmed', text: 'Подтверждён' }
+        return { className: 'confirmed', text: 'Готово' };
       case 'error':
-        return { className: 'error', text: 'Ошибка' }
+        return { className: 'error', text: 'Ошибка OCR' };
       default:
-        return { className: 'uploaded', text: 'Загружен' }
+        return { className: 'uploaded', text: 'Загружен' };
     }
   };
 
@@ -124,9 +116,7 @@ const fetchQueue = useCallback(async () => {
               const statusInfo = getStatusInfo(doc.status);
               return (
                 <div key={doc.id} className="queue-item">
-                  <div className="doc-info"
-                    onClick={() => navigate(`/documents/${doc.id}`)}
-                    style={{ cursor: 'pointer' }}>
+                  <div className="doc-info" onClick={() => navigate(`/documents/${doc.id}`)} style={{ cursor: 'pointer', flex: 1 }}>
                     <span className="doc-icon">Ф</span>
                     <div className="doc-details">
                       <span className="doc-name" title={doc.name}>{doc.name}</span>
@@ -140,6 +130,16 @@ const fetchQueue = useCallback(async () => {
                         <div className="progress-fill" style={{ width: `${doc.progress}%` }}></div>
                       </div>
                     )}
+                    <div className="open-icon-wrapper">
+                      <button
+                        className="open-icon-btn"
+                        onClick={() => navigate(`/documents/${doc.id}`)}
+                        title="Открыть документ"
+                      >
+                        <span className="open-icon">🔍</span>
+                        <span className="open-text">Открыть</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

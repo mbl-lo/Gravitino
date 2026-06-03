@@ -35,26 +35,38 @@ export interface Document {
 }
 
 export const documentsService = {
-  // Получить список документов
   async getDocumentsList(): Promise<Document[]> {
-    const response = await api.get('/documents')
-    return response.data
+    const response = await api.get('/documents');
+    return response.data;
   },
 
-  // Получить документ по ID
   async getDocumentById(id: string): Promise<Document> {
-    const response = await api.get(`/documents/${id}`)
-    return response.data
+    const response = await api.get(`/documents/${id}`);
+    return response.data;
   },
 
-  // Получить OCR результат
   async runOcr(id: string): Promise<any> {
-    const response = await api.get(`/documents/${id}/run-ocr`)
-    return response.data
+    const response = await api.post(`/documents/${id}/run-ocr`);
+    return response.data;
   },
 
-  // Получить ссылку на файл
-  getFileUrl(id: string): string {
-    return `http://localhost:3000/documents/${id}/file`
+  async getOcrResult(id: string): Promise<any> {
+    try {
+      const response = await api.get(`/documents/${id}/ocr`);
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка получения OCR результата:', error);
+      return null;
+    }
   },
-}
+
+  getFileUrl(id: string): string {
+    return `/api/documents/${id}/file`;
+  },
+};
+
+// Обновить поле документа
+export const updateDocumentField = async (id: string, fieldKey: string, value: string) => {
+  const response = await api.patch(`/documents/${id}/fields/${fieldKey}`, { value });
+  return response.data;
+};

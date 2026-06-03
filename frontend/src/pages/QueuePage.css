@@ -68,6 +68,23 @@
   background: #f59e0b;
 }
 
+/* Кнопка открытия */
+.open-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.open-btn:hover {
+  background-color: #2563eb;
+}
+
 /* Список */
 .queue-list {
   display: flex;
@@ -142,7 +159,7 @@
   flex-wrap: wrap;
 }
 
-/* ===== СТАТУСЫ (исправленные) ===== */
+/* ===== СТАТУСЫ ===== */
 
 /* Загружен */
 .status-badge.uploaded {
@@ -150,7 +167,7 @@
   color: white;
 }
 
-/* Обрабатывается */
+/* Распознаётся */
 .status-badge.processing {
   background-color: #3b82f6;
   color: white;
@@ -162,13 +179,13 @@
   color: white;
 }
 
-/* Подтверждён */
+/* Готово */
 .status-badge.confirmed {
   background-color: #10b981;
   color: white;
 }
 
-/* Ошибка */
+/* Ошибка OCR */
 .status-badge.error {
   background-color: #dc2626;
   color: white;
@@ -262,4 +279,51 @@
   font-style: italic;
   background: #fafbfd;
   border-radius: 24px;
+}
+
+/* Контейнер для иконки */
+.open-icon-wrapper {
+  margin-left: 12px;
+}
+
+/* Кнопка-иконка */
+.open-icon-btn {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1f2937;
+}
+
+/* Иконка всегда видна */
+.open-icon {
+  font-size: 14px;
+}
+
+/* Текст "Открыть" - скрыт по умолчанию */
+.open-text {
+  display: none;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* При наведении на кнопку показываем текст */
+.open-icon-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #3b82f6;
+  padding: 6px 12px;
+}
+
+.open-icon-btn:hover .open-text {
+  display: inline;
+}
+
+/* При наведении на всю строку (опционально) */
+.queue-item:hover .open-icon-btn {
+  border-color: #3b82f6;
 }
