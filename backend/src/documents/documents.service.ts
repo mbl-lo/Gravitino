@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -6,7 +6,7 @@ export class DocumentsService {
   constructor(private prisma: PrismaService) {}
 
   async create(files: any[], body: any) {
-    const { uploadedById } = body;
+    const uploadedById = body?.uploadedById ?? '33333333-3333-4333-8333-333333333334';
     const createdDocuments = await Promise.all(
       files.map((file) =>
         this.prisma.document.create({
@@ -134,5 +134,34 @@ export class DocumentsService {
     ]);
 
     return { ...ocr, savedFields: fields.length, status: 'processed', ocrStatus: 'completed' };
+  }
+
+  async confirm(id: string) {
+    const document = await this.prisma.document.findUnique({
+      where: { id },
+      include: { anomalies: true },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Документ с ID ${id} не найден`);
+    }
+
+    const criticalAnomalies = document.anomalies.filter(
+      (a) => (a.severity === 'high' || a.severity === 'critical') && a.status === 'open',
+    );
+
+    if (criticalAnomalies.length > 0) {
+      throw new BadRequestException(
+        `Невозможно подтвердить документ: найдено ${criticalAnomalies.length} критических аномалий`,
+      );
+    }
+
+    return this.prisma.document.update({
+      where: { id },
+      data: {
+        status: 'confirmed',
+        confirmedAt: new Date(),
+      },
+    });
   }
 }

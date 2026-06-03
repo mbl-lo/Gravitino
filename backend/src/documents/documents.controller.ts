@@ -91,6 +91,11 @@ export class DocumentsController {
     return { ...saved, validation };
   }
 
+  @Post(':id/confirm')
+  async confirm(@Param('id') id: string) {
+    return this.documentsService.confirm(id);
+  }
+
   @Get(':id')
   async getDocumentDetails(@Param('id') id: string) {
     const document = await this.documentsService.findOneDetails(id);
