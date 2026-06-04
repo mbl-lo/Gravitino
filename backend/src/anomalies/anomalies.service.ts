@@ -445,4 +445,39 @@ export class AnomaliesService {
   private round(value: number) {
     return Math.round(value * 100) / 100;
   }
+
+  async getAllAnomalies() {
+    const anomalies = await this.prisma.anomaly.findMany({
+      include: {
+        document: true,
+      },
+      orderBy: {
+        id: 'desc',
+      }
+  });
+
+  const fieldLabels: Record<string, string> = {
+    odometr_end: 'Расчетный пробег',
+    fuel_used_liters: 'Отклонение топлива',
+      signatures: 'Подпись механика/водителя',
+      arrival_time: 'Время работы/выезда',
+      departure_time: 'Время выезда',
+      total_hours: 'Время работы',
+      downtime_hours: 'Время простоя'
+    };
+
+    return anomalies.map((anomaly) => ({
+      id: anomaly.id,
+      documentId: anomaly.documentId,
+      documentNumber: anomaly.document?.documentNumber || 'Новый', 
+      type: 
+        anomaly.type === 'odometer_order' ? 'Несоответствие пробега' :
+        anomaly.type === 'fuel_overrun' ? 'Расход топлива выше нормы' :
+        anomaly.type === 'missing_signature' ? 'Отсутствует подпись' :
+        anomaly.type === 'time_invalid' ? 'Неверный временной интервал' : anomaly.type,
+      fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
+      severity: anomaly.severity,
+      status: anomaly.status, 
+    }));
+  }
 }
