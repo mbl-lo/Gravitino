@@ -149,5 +149,24 @@ export const getRecentDocuments = (limit: number = 5) => {
 export const getDailyStats = () => {
   return api.get<DailyStats[]>('/dashboard/daily')
 }
+// --- АНОМАЛИИ ---
+export const getAnomalies = () => {
+  return api.get('/anomalies')
+}
+
+// --- ЗАПУСК РАСПОЗНАВАНИЯ (OCR) ---
+export const runOcr = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/ocr`)
+}
+
+// --- ПРОВЕРИТЬ ДОКУМЕНТ (валидация) ---
+export const validateDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/validate`)
+}
+
+// --- ПОДТВЕРДИТЬ ДОКУМЕНТ ---
+export const confirmDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
+}
 
 export default api

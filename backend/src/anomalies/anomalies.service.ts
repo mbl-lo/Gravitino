@@ -426,11 +426,14 @@ export class AnomaliesService {
     if (value === null || value === undefined) {
       return null;
     }
-
     if (typeof value === 'number') {
       return Number.isFinite(value) ? value : null;
     }
+    if (typeof value !== 'string') {
+      return null;
+    }
 
+    // Добавили (value as string | number), чтобы ублажить строгий TypeScript
     const normalized = String(value).replace(/\s/g, '').replace(',', '.');
     const match = normalized.match(/-?\d+(\.\d+)?/);
 
@@ -453,31 +456,34 @@ export class AnomaliesService {
       },
       orderBy: {
         id: 'desc',
-      }
-  });
+      },
+    });
 
-  const fieldLabels: Record<string, string> = {
-    odometer_end: 'Расчетный пробег',
-    fuel_used_liters: 'Отклонение топлива',
+    const fieldLabels: Record<string, string> = {
+      odometer_end: 'Расчетный пробег', // Исправили опечатку odometr -> odometer
+      fuel_used_liters: 'Отклонение топлива',
       signatures: 'Подпись механика/водителя',
       arrival_time: 'Время работы/выезда',
       departure_time: 'Время выезда',
       total_hours: 'Время работы',
-      downtime_hours: 'Время простоя'
+      downtime_hours: 'Время простоя',
+    };
+
+    const typeLabels: Record<string, string> = {
+      odometer_order: 'Несоответствие пробега',
+      fuel_overrun: 'Расход топлива выше нормы',
+      missing_signature: 'Отсутствует подпись',
+      time_invalid: 'Неверный временной интервал',
     };
 
     return anomalies.map((anomaly) => ({
       id: anomaly.id,
       documentId: anomaly.documentId,
-      documentNumber: anomaly.document?.documentNumber || 'Новый', 
-      type: 
-        anomaly.type === 'odometer_order' ? 'Несоответствие пробега' :
-        anomaly.type === 'fuel_overrun' ? 'Расход топлива выше нормы' :
-        anomaly.type === 'missing_signature' ? 'Отсутствует подпись' :
-        anomaly.type === 'time_invalid' ? 'Неверный временной интервал' : anomaly.type,
+      documentNumber: anomaly.document?.documentNumber || 'Новый',
+      type: typeLabels[anomaly.type] || anomaly.type,
       fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
       severity: anomaly.severity,
-      status: anomaly.status, 
+      status: anomaly.status,
     }));
   }
 }

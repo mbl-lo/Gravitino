@@ -58,7 +58,7 @@ function AppPage() {
 
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>
-            Добро пожаловать, {user?.name}!
+            Добро пожаловать, {user?.fullName}!
           </h2>
           
           <div style={{
@@ -70,7 +70,7 @@ function AppPage() {
             <h3 style={{ fontWeight: '500', marginBottom: '0.5rem' }}>Информация о пользователе:</h3>
             <p><strong>Email:</strong> {user?.email}</p>
             <p><strong>Роль:</strong> {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
-            <p><strong>Компания:</strong> {user?.company}</p>
+            <p><strong>Компания:</strong> {user?.organizationId}</p>
           </div>
 
           <div style={{
