@@ -433,7 +433,6 @@ export class AnomaliesService {
       return null;
     }
 
-    // Добавили (value as string | number), чтобы ублажить строгий TypeScript
     const normalized = String(value).replace(/\s/g, '').replace(',', '.');
     const match = normalized.match(/-?\d+(\.\d+)?/);
 
@@ -460,7 +459,7 @@ export class AnomaliesService {
     });
 
     const fieldLabels: Record<string, string> = {
-      odometer_end: 'Расчетный пробег', // Исправили опечатку odometr -> odometer
+      odometer_end: 'Расчетный пробег',
       fuel_used_liters: 'Отклонение топлива',
       signatures: 'Подпись механика/водителя',
       arrival_time: 'Время работы/выезда',
@@ -479,7 +478,7 @@ export class AnomaliesService {
     return anomalies.map((anomaly) => ({
       id: anomaly.id,
       documentId: anomaly.documentId,
-      documentNumber: anomaly.document?.documentNumber || 'Новый',
+      documentNumber: anomaly.document?.originalFileName || 'Новый',
       type: typeLabels[anomaly.type] || anomaly.type,
       fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
       severity: anomaly.severity,

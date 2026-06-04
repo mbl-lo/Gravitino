@@ -139,15 +139,18 @@ export class DocumentsController {
   ) {
     if (value === undefined) {
       throw new BadRequestException('Необходимо передать новое значение поля');
-  }
+    }
 
-  return this.documentsService.updateFields(id, fieldKey, value);
+    return this.documentsService.updateFields(id, fieldKey, value);
   }
 
   @Post(':id/validate')
-  async validateDocument(
-    @Param('id') id: string,
-  ){
+  async validateDocument(@Param('id') id: string) {
     return this.anomaliesService.validateDocument(id);
+  }
+
+  @Get('anomalies/all')
+  async getAllAnomalies() {
+    return this.anomaliesService.getAllAnomalies();
   }
 }

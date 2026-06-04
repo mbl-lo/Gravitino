@@ -151,7 +151,7 @@ export const getDailyStats = () => {
 }
 // --- АНОМАЛИИ ---
 export const getAnomalies = () => {
-  return api.get('/anomalies')
+  return api.get('/documents/anomalies/all')
 }
 
 // --- ЗАПУСК РАСПОЗНАВАНИЯ (OCR) ---

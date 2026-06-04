@@ -16,16 +16,6 @@ interface BackendAnomaly {
   actualValue?: string;
 }
 
-const MOCK: BackendAnomaly[] = [
-  { id: '1', documentId: 'doc-1', documentNumber: 'PL-2026-00129', type: 'Несоответствие пробега', fieldLabel: 'Расчетный пробег', severity: 'critical', status: 'open', detectedAt: '2026-06-03' },
-  { id: '2', documentId: 'doc-2', documentNumber: 'PL-2026-00128', type: 'Расход топлива выше нормы', fieldLabel: 'Расход топлива', severity: 'critical', status: 'open', detectedAt: '2026-06-02' },
-  { id: '3', documentId: 'doc-3', documentNumber: 'PL-2026-00127', type: 'Расход топлива выше нормы', fieldLabel: 'Расход топлива', severity: 'medium', status: 'open', detectedAt: '2026-06-02' },
-  { id: '4', documentId: 'doc-4', documentNumber: 'PL-2026-00126', type: 'Неверный временной интервал', fieldLabel: 'Время работы/выезда', severity: 'medium', status: 'fixed', detectedAt: '2026-06-01' },
-  { id: '5', documentId: 'doc-5', documentNumber: 'PL-2026-00125', type: 'Отсутствует подпись', fieldLabel: 'Подпись механика/водителя', severity: 'high', status: 'incorrect', detectedAt: '2026-05-31' },
-  { id: '6', documentId: 'doc-6', documentNumber: 'PL-2026-00124', type: 'Несоответствие пробега', fieldLabel: 'Расчетный пробег', severity: 'critical', status: 'hidden', detectedAt: '2026-05-30' },
-  { id: '7', documentId: 'doc-7', documentNumber: 'PL-2026-00123', type: 'Расход топлива выше нормы', fieldLabel: 'Расход топлива', severity: 'medium', status: 'insufficient', detectedAt: '2026-05-29' },
-];
-
 const SEVERITY_MAP: Record<string, string> = {
   critical: 'severity-critical',
   high: 'severity-high',
@@ -69,8 +59,8 @@ const AnomaliesPage = () => {
     try {
       const response = await getAnomalies();
       setAnomalies(response.data as unknown as BackendAnomaly[]);
-    } catch {
-      setAnomalies(MOCK);
+    } catch (error) {
+      console.error('Ошибка при загрузке аномалий:', error);
     } finally {
       setIsLoading(false);
     }
