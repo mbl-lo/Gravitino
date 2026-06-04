@@ -457,7 +457,7 @@ export class AnomaliesService {
   });
 
   const fieldLabels: Record<string, string> = {
-    odometr_end: 'Расчетный пробег',
+    odometer_end: 'Расчетный пробег',
     fuel_used_liters: 'Отклонение топлива',
       signatures: 'Подпись механика/водителя',
       arrival_time: 'Время работы/выезда',

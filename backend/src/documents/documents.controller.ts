@@ -144,7 +144,7 @@ export class DocumentsController {
   return this.documentsService.updateFields(id, fieldKey, value);
   }
 
-  @Post('id/validate')
+  @Post(':id/validate')
   async validateDocument(
     @Param('id') id: string,
   ){
