@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import EditableField from '../components/EditableField'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { documentsService, Document } from '../services/documents'
+import { documentsService, Document, updateDocumentField } from '../services/documents'
 
 const DocumentDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -66,7 +66,12 @@ const DocumentDetail = () => {
     }
   }
 
-  const getFieldValue = (key: string) => document?.fields?.find(f => f.fieldKey === key)?.recognizedValue || '—'
+  const getFieldValue = (key: string) => {
+  
+    const field = document?.fields?.find(f => f.fieldKey === key);
+    if (!field) return '—';
+    return field.correctedValue ?? field.recognizedValue ?? '—';
+  };
 
   const getStatusText = () => {
   if (document?.status === 'confirmed') return 'Подтверждён'
@@ -84,12 +89,18 @@ const getStatusColor = () => {
   return '#f59e0b'
 }
 
-  const handleFieldUpdate = (fieldKey: string, newValue: string) => {
+  const handleFieldUpdate = async (fieldKey: string, newValue: string) => {
+  if (!id) return;
+  try {
+    await updateDocumentField(id, fieldKey, newValue);
     setDocument(prev => prev ? {
       ...prev,
-      fields: prev.fields?.map(f => f.fieldKey === fieldKey ? { ...f, recognizedValue: newValue } : f) || []
-    } : prev)
+      fields: prev.fields?.map(f => f.fieldKey === fieldKey ? { ...f, correctedValue: newValue } : f) || []
+    } : prev);
+  } catch (err) {
+    console.error('Ошибка сохранения:', err);
   }
+};
 
   if (loading) return <div style={styles.loading}>Загрузка...</div>
 

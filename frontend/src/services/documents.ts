@@ -5,6 +5,8 @@ export interface DocumentField {
   fieldLabel: string
   recognizedValue: string
   confidence?: number
+  correctedValue?: string | null 
+  isEdited?: boolean
 }
 
 export interface Anomaly {
