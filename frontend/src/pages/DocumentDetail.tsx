@@ -69,18 +69,20 @@ const DocumentDetail = () => {
   const getFieldValue = (key: string) => document?.fields?.find(f => f.fieldKey === key)?.recognizedValue || '—'
 
   const getStatusText = () => {
-    if (document?.hasAnomalies) return 'Требует проверки'
-    if (document?.status === 'confirmed') return 'Подтверждён'
-    if (document?.status === 'processing') return 'Обрабатывается'
-    return 'Загружен'
-  }
+  if (document?.status === 'confirmed') return 'Подтверждён'
+  if (document?.status === 'processing') return 'Обрабатывается'
+  if (document?.hasAnomalies || document?.status === 'needs_review') return 'Требует проверки'
+  if (document?.status === 'processed') return 'Проверен (ДАННЫЕ КОРРЕКТНЫ)'
+  return 'Загружен'
+}
 
-  const getStatusColor = () => {
-    if (document?.hasAnomalies) return '#ef4444'
-    if (document?.status === 'confirmed') return '#10b981'
-    if (document?.status === 'processing') return '#3b82f6'
-    return '#f59e0b'
-  }
+const getStatusColor = () => {
+  if (document?.status === 'confirmed') return '#10b981'
+  if (document?.status === 'processing') return '#3b82f6'
+  if (document?.hasAnomalies || document?.status === 'needs_review') return '#ef4444'
+  if (document?.status === 'processed') return '#10b981' // Зеленый для успешной проверки
+  return '#f59e0b'
+}
 
   const handleFieldUpdate = (fieldKey: string, newValue: string) => {
     setDocument(prev => prev ? {

@@ -183,7 +183,9 @@ export class AnomaliesService {
 
     await this.prisma.document.update({
       where: { id: documentId },
-      data: { hasAnomalies: createdAnomalies.length > 0 },
+      data: { hasAnomalies: createdAnomalies.length > 0,
+        status: createdAnomalies.length > 0 ? 'needs_review' : 'processed',
+      },
     });
 
     return {
