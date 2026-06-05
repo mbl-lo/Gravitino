@@ -156,7 +156,7 @@ export const getAnomalies = () => {
 
 // --- ЗАПУСК РАСПОЗНАВАНИЯ (OCR) ---
 export const runOcr = (documentId: string) => {
-  return api.post(`/documents/${encodeURIComponent(documentId)}/ocr`)
+  return api.post(`/documents/${encodeURIComponent(documentId)}/run-ocr`)
 }
 
 // --- ПРОВЕРИТЬ ДОКУМЕНТ (валидация) ---
