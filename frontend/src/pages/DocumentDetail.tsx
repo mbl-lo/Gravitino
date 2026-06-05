@@ -175,7 +175,7 @@ const getStatusColor = () => {
 
           <Section title="Пробег" fields={[
             ['Спидометр при выезде', 'odometer_start'], ['Спидометр при возвращении', 'odometer_end'],
-            ['Пробег по маршруту', 'route_distance'],
+            ['Пробег по маршруту', 'mileage'],
           ]} doc={document} onUpdate={handleFieldUpdate} v={v} extra={
             <div style={styles.infoRow}>
               <div style={styles.infoLabel}>Расчетный пробег</div>

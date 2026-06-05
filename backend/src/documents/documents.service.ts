@@ -139,13 +139,22 @@ export class DocumentsService {
   async updateFields(documentId: string, fieldKey: string, newValue: string) {
     await this.findOne(documentId);
 
-    const updatedFields = await this.prisma.documentField.update({
+    const updatedFields = await this.prisma.documentField.upsert({
       where: {
         documentId_fieldKey: { documentId, fieldKey },
       },
-      data: {
+      update: {
         correctedValue: newValue,
         isEdited: true,
+      },
+      create: {
+        documentId,
+        fieldKey,
+        fieldLabel: fieldKey,
+        recognizedValue: '',
+        correctedValue: newValue,
+        isEdited: true,
+        confidence: 1.0,
       },
     });
 
