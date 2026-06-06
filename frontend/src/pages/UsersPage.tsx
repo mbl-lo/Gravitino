@@ -274,7 +274,15 @@ export default function UsersPage() {
                   </td>
                   <td style={{ padding: '1rem 1.25rem', position: 'relative' }}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === user.id ? null : user.id); }}
+                      onClick={(e) => {
+                        if (currentUser?.role !== 'admin') {
+                          setError('Только администратор может управлять пользователями');
+                          setTimeout(() => setError(''), 3000);
+                          return;
+                        }
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === user.id ? null : user.id);
+                      }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: '#6b7280' }}>⋮</button>
                     {menuOpenId === user.id && (
                       <div style={{ position: 'absolute', right: '1rem', top: '3rem', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 50, minWidth: '160px' }}>
