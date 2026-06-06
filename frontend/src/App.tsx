@@ -8,6 +8,8 @@ import PlaceholderPage from './components/PlaceholderPage'
 import UploadPage from './pages/UploadPage'
 import QueuePage from './pages/QueuePage'
 import './App.css'
+import AnomaliesPage from './pages/AnomaliesPage'
+import UsersPage from './pages/UsersPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -64,11 +66,7 @@ function AppRoutes() {
       
       <Route path="/anomalies" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Аномалии" 
-            icon="⚠️"
-            description="Документы, требующие проверки"
-          />
+          <AnomaliesPage />
         </ProtectedRoute>
       } />
       
@@ -104,11 +102,7 @@ function AppRoutes() {
       
       <Route path="/users" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Пользователи" 
-            icon="👥"
-            description="Управление пользователями системы"
-          />
+          <UsersPage />
         </ProtectedRoute>
       } />
     </Routes>
