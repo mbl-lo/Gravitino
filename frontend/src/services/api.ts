@@ -65,11 +65,13 @@ export const uploadDocuments = (files: File[]) => {
 // --- ОЧЕРЕДЬ ОБРАБОТКИ (QueuePage) ---
 
 /** Тип документа в очереди */
+// services/api.ts
+
 export interface QueueDocument {
   id: string
   name: string
-  size: string
-  status: 'waiting' | 'processing' | 'completed' | 'error'
+  size: number
+  status: 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error'  // ← обновлено
   progress: number
   added: string
 }
@@ -146,6 +148,25 @@ export const getRecentDocuments = (limit: number = 5) => {
  */
 export const getDailyStats = () => {
   return api.get<DailyStats[]>('/dashboard/daily')
+}
+// --- АНОМАЛИИ ---
+export const getAnomalies = () => {
+  return api.get('/documents/anomalies/all')
+}
+
+// --- ЗАПУСК РАСПОЗНАВАНИЯ (OCR) ---
+export const runOcr = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/run-ocr`)
+}
+
+// --- ПРОВЕРИТЬ ДОКУМЕНТ (валидация) ---
+export const validateDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/validate`)
+}
+
+// --- ПОДТВЕРДИТЬ ДОКУМЕНТ ---
+export const confirmDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
 }
 
 export default api

@@ -183,7 +183,9 @@ export class AnomaliesService {
 
     await this.prisma.document.update({
       where: { id: documentId },
-      data: { hasAnomalies: createdAnomalies.length > 0 },
+      data: { hasAnomalies: createdAnomalies.length > 0,
+        status: createdAnomalies.length > 0 ? 'needs_review' : 'processed',
+      },
     });
 
     return {
@@ -426,9 +428,11 @@ export class AnomaliesService {
     if (value === null || value === undefined) {
       return null;
     }
-
     if (typeof value === 'number') {
       return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value !== 'string') {
+      return null;
     }
 
     const normalized = String(value).replace(/\s/g, '').replace(',', '.');
@@ -444,5 +448,43 @@ export class AnomaliesService {
 
   private round(value: number) {
     return Math.round(value * 100) / 100;
+  }
+
+  async getAllAnomalies() {
+    const anomalies = await this.prisma.anomaly.findMany({
+      include: {
+        document: true,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    });
+
+    const fieldLabels: Record<string, string> = {
+      odometer_end: 'Расчетный пробег',
+      fuel_used_liters: 'Отклонение топлива',
+      signatures: 'Подпись механика/водителя',
+      arrival_time: 'Время работы/выезда',
+      departure_time: 'Время выезда',
+      total_hours: 'Время работы',
+      downtime_hours: 'Время простоя',
+    };
+
+    const typeLabels: Record<string, string> = {
+      odometer_order: 'Несоответствие пробега',
+      fuel_overrun: 'Расход топлива выше нормы',
+      missing_signature: 'Отсутствует подпись',
+      time_invalid: 'Неверный временной интервал',
+    };
+
+    return anomalies.map((anomaly) => ({
+      id: anomaly.id,
+      documentId: anomaly.documentId,
+      documentNumber: anomaly.document?.originalFileName || 'Новый',
+      type: typeLabels[anomaly.type] || anomaly.type,
+      fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
+      severity: anomaly.severity,
+      status: anomaly.status,
+    }));
   }
 }
