@@ -8,7 +8,6 @@ import PlaceholderPage from './components/PlaceholderPage'
 import UploadPage from './pages/UploadPage'
 import QueuePage from './pages/QueuePage'
 import './App.css'
-import AnomaliesPage from './pages/AnomaliesPage'
 import UsersPage from './pages/UsersPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -66,7 +65,11 @@ function AppRoutes() {
       
       <Route path="/anomalies" element={
         <ProtectedRoute>
-          <AnomaliesPage />
+          <PlaceholderPage
+            title="Аномалии"
+            icon="⚠️"
+            description="Документы, требующие проверки"
+          />
         </ProtectedRoute>
       } />
       
