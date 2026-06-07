@@ -2,152 +2,123 @@ import {
   Controller,
   Get,
   Post,
+  Body,
+  Patch,
   Param,
-  NotFoundException,
-  StreamableFile,
+  Query,
   Res,
   UseInterceptors,
   UploadedFiles,
-  Body,
   BadRequestException,
-  Patch
+  NotFoundException,
+  StreamableFile,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { DocumentsService } from './documents.service';
-import { createReadStream, existsSync } from 'fs';
-import { join, extname } from 'path';
 import { Response } from 'express';
-import { diskStorage } from 'multer';
-import { OcrService } from './ocr.service';
-import { AnomaliesService } from '../anomalies/anomalies.service';
+import { DocumentsService } from './documents.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
 
 @Controller('documents')
 export class DocumentsController {
-  constructor(
-    private readonly documentsService: DocumentsService,
-    private readonly ocrService: OcrService,
-    private readonly anomaliesService: AnomaliesService,
-  ) {}
+  constructor(private readonly documentsService: DocumentsService) {}
 
   @Get()
-  async getDocumentsList() {
-    return this.documentsService.getDocumentsList();
+  async getDocumentsList(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('hasAnomalies') hasAnomalies?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    return this.documentsService.getDocumentsList({
+      search,
+      status,
+      hasAnomalies: hasAnomalies === 'true' ? true : hasAnomalies === 'false' ? false : undefined,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
   }
 
-  @Post('upload')
-  @UseInterceptors(
-    FilesInterceptor('files', 10, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `${uniqueSuffix}${ext}`);
-        },
-      }),
+  @Get('export')
+  async exportDocuments(
+    @Res({ passthrough: true }) res: Response,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('hasAnomalies') hasAnomalies?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    const result = await this.documentsService.exportToJson({
+      search,
+      status,
+      hasAnomalies: hasAnomalies === 'true' ? true : hasAnomalies === 'false' ? false : undefined,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
 
-      fileFilter: (req, file, cb) => {
-        const allowedMimes = [
-          'image/jpeg',
-          'image/png',
-          'application/pdf',
-          'image/heic',
-        ];
-
-        if (allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new BadRequestException(
-              'Недопустимый формат файла. Разрешены только JPG, PNG, PDF и HEIC.',
-            ),
-            false,
-          );
-        }
-      },
-    }),
-  )
-  async upload(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: any) {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('Файлы не были загружены.');
-    }
-
-    const result = await this.documentsService.create(files, body);
-
-    result.files.forEach((doc) => {
-      this.runOcr(doc.id).catch((err) => {
-        console.error(`Ошибка при фоновой обработке документа ${doc.id}:`, err);
-      });
+    res.set({
+      'Content-Type': 'application/json',
+      'Content-Disposition': `attachment; filename="documents-export-${Date.now()}.json"`,
     });
 
     return result;
   }
 
-  @Post(':id/run-ocr')
-  async runOcr(@Param('id') id: string) {
-    const ocrResult = this.ocrService.process(id);
-    const saved = await this.documentsService.saveOcrResult(id, ocrResult);
-    const validation = await this.anomaliesService.validateDocument(id);
-    return { ...saved, validation };
+  @Post('upload')
+  @UseInterceptors(FilesInterceptor('files'))
+  async upload(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: any) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Файлы не были загружены.');
+    }
+
+    return this.documentsService.create(files, body);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const document = await this.documentsService.findOneDetails(id);
+    
+    if (!document) {
+      throw new NotFoundException('Документ не найден');
+    }
+
+    return document;
+  }
+
+  @Get(':id/file')
+  async getFile(@Param('id') id: string) {
+    const filePath = await this.documentsService.getFilename(id);
+
+    if (!filePath) {
+      throw new NotFoundException('Путь к файлу или оригинальное имя отсутствует в базе данных');
+    }
+
+    const fullPath = join(process.cwd(), filePath);
+
+    if (!existsSync(fullPath)) {
+      throw new NotFoundException('Файл физически отсутствует на сервере в папке uploads');
+    }
+
+    const fileStream = createReadStream(fullPath);
+    return new StreamableFile(fileStream);
+  }
+
+  @Patch(':id/fields/:fieldKey')
+  async updateField(
+    @Param('id') id: string,
+    @Param('fieldKey') fieldKey: string,
+    @Body('newValue') newValue: string,
+  ) {
+    if (!newValue) {
+      throw new BadRequestException('Необходимо передать новое значение поля');
+    }
+
+    return this.documentsService.updateFields(id, fieldKey, newValue);
   }
 
   @Post(':id/confirm')
   async confirm(@Param('id') id: string) {
     return this.documentsService.confirm(id);
-  }
-
-  @Get(':id')
-  async getDocumentDetails(@Param('id') id: string) {
-    const document = await this.documentsService.findOneDetails(id);
-    if (!document) {
-      throw new NotFoundException('Документ не найден');
-    }
-    return document;
-  }
-
-  @Get(':id/file')
-  async getFile(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
-    const document = await this.documentsService.findOne(id);
-    const filePath = await this.documentsService.getFilename(id);
-    
-    if (!filePath || !document.originalFileName) {
-      throw new NotFoundException('Путь к файлу или оригинальное имя отсутствует в базе данных');
-    }
-
-    const absolutePath = join(process.cwd(), filePath);
-
-    if (!existsSync(absolutePath)) {
-      throw new NotFoundException('Файл физически отсутствует на сервере в папке uploads');
-    }
-
-    const fileStream = createReadStream(absolutePath);
-    
-    res.set({
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `inline; filename="${document.originalFileName}"`,
-    });
-
-    return new StreamableFile(fileStream);
-  }
-
-  @Patch(':id/fields/:fieldKey')
-  async updateDocumentFields(
-    @Param('id') id: string,
-    @Param('fieldKey') fieldKey: string,
-    @Body('value') value: string,
-  ) {
-    if (value === undefined) {
-      throw new BadRequestException('Необходимо передать новое значение поля');
-  }
-
-  return this.documentsService.updateFields(id, fieldKey, value);
-  }
-
-  @Post(':id/validate')
-  async validateDocument(
-    @Param('id') id: string,
-  ){
-    return this.anomaliesService.validateDocument(id);
   }
 }
