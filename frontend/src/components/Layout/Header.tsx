@@ -43,11 +43,11 @@ const Header = () => {
         </button>
 
         <div style={styles.avatar}>
-          <span style={styles.avatarText}>ОИ</span>
+          <span style={styles.avatarText}>{user?.fullName ? (() => { const p = user.fullName.trim().split(' '); return p.length >= 2 ? (p[1][0] + p[0][0]).toUpperCase() : p[0][0].toUpperCase(); })() : 'ОИ'}</span>
         </div>
 
         <div style={styles.userInfo}>
-          <span style={styles.userName}>{user?.fullName || 'Оператор'}</span>
+          <span style={styles.userName}>{user?.fullName ? (() => { const p = user.fullName.trim().split(' '); return p.length >= 2 ? `${p[1]} ${p[0]}` : user.fullName; })() : 'Оператор'}</span>
           <span style={styles.userStatus}>Активен</span>
         </div>
 

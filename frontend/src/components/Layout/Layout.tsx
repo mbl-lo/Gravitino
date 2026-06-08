@@ -33,8 +33,7 @@ const styles = {
     padding: '24px',
   },
   content: {
-    maxWidth: '1400px',
-    margin: '0 auto',
+    width: '100%',
   },
 }
 
