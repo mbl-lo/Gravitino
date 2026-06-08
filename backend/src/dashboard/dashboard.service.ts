@@ -7,7 +7,7 @@ export class DashboardService {
 
   async getStats() {
     const total = await this.prisma.document.count();
-
+    
     const processing = await this.prisma.document.count({
       where: {
         ocrStatus: {
@@ -22,10 +22,33 @@ export class DashboardService {
       },
     });
 
+    const completed = await this.prisma.document.count({
+      where: {
+        ocrStatus: 'completed',
+      },
+    });
+
+    const confirmed = await this.prisma.document.count({
+      where: {
+        confirmedAt: {
+          not: null,
+        },
+      },
+    });
+
+    const withAnomalies = await this.prisma.document.count({
+      where: {
+        hasAnomalies: true,
+      },
+    });
+
     return {
       total,
       processing,
       errors,
+      completed,
+      confirmed,
+      withAnomalies,
     };
   }
 }

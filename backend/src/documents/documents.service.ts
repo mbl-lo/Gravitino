@@ -27,7 +27,41 @@ export class DocumentsService {
       files: createdDocuments,
     };
   }
-  async getDocumentsList() {
+
+  async getDocumentsList(filters: {
+    search?: string;
+    status?: string;
+    hasAnomalies?: boolean;
+    fromDate?: Date;
+    toDate?: Date;
+  }) {
+    const where: any = {};
+
+    if (filters.search) {
+      where.originalFileName = {
+        contains: filters.search,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.hasAnomalies !== undefined) {
+      where.hasAnomalies = filters.hasAnomalies;
+    }
+
+    if (filters.fromDate || filters.toDate) {
+      where.createdAt = {};
+      if (filters.fromDate) {
+        where.createdAt.gte = filters.fromDate;
+      }
+      if (filters.toDate) {
+        where.createdAt.lte = filters.toDate;
+      }
+    }
+
     return this.prisma.document.findMany({
       select: {
         id: true,
@@ -50,6 +84,22 @@ export class DocumentsService {
       },
  
     });
+  }
+
+  async exportToJson(filters: {
+    search?: string;
+    status?: string;
+    hasAnomalies?: boolean;
+    fromDate?: Date;
+    toDate?: Date;
+  }) {
+    const documents = await this.getDocumentsList(filters);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      totalCount: documents.length,
+      documents,
+    };
   }
 
   async findOne(id: string) {
@@ -159,7 +209,8 @@ export class DocumentsService {
     });
 
     return updatedFields;
-}
+  }
+
   async confirm(id: string) {
     const document = await this.prisma.document.findUnique({
       where: { id },

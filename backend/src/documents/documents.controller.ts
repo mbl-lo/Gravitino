@@ -10,6 +10,7 @@ import {
   UploadedFiles,
   Body,
   BadRequestException,
+  Query,
   Patch
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -30,8 +31,45 @@ export class DocumentsController {
   ) {}
 
   @Get()
-  async getDocumentsList() {
-    return this.documentsService.getDocumentsList();
+  async getDocumentsList(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('hasAnomalies') hasAnomalies?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    return this.documentsService.getDocumentsList({
+      search,
+      status,
+      hasAnomalies: hasAnomalies === 'true' ? true : hasAnomalies === 'false' ? false : undefined,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
+  }
+
+  @Get('export')
+  async exportDocuments(
+    @Res({ passthrough: true }) res: Response,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('hasAnomalies') hasAnomalies?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    const result = await this.documentsService.exportToJson({
+      search,
+      status,
+      hasAnomalies: hasAnomalies === 'true' ? true : hasAnomalies === 'false' ? false : undefined,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
+
+    res.set({
+      'Content-Type': 'application/json',
+      'Content-Disposition': `attachment; filename="documents-export-${Date.now()}.json"`,
+    });
+
+    return result;
   }
 
   @Post('upload')
