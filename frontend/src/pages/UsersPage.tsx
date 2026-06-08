@@ -31,6 +31,13 @@ const ROLE_MAP: Record<string, string> = {
   accountant: 'Бухгалтер',
 };
 
+function formatDisplayName(fullName: string) {
+  const parts = fullName.trim().split(' ');
+  if (parts.length >= 3) return `${parts[1]} ${parts[0]}`;
+  if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+  return fullName;
+}
+
 function getInitials(fullName: string) {
   return fullName
     .split(' ')
@@ -240,9 +247,9 @@ export default function UsersPage() {
                         fontWeight: '700',
                         flexShrink: 0,
                       }}>
-                        {getInitials(user.fullName)}
+                        {getInitials(formatDisplayName(user.fullName))}
                       </div>
-                      <span style={{ fontWeight: '500', color: '#111827' }}>{user.fullName}</span>
+                      <span style={{ fontWeight: '500', color: '#111827' }}>{formatDisplayName(user.fullName)}</span>
                     </div>
                   </td>
                   <td style={{ padding: '1rem 1.25rem', color: '#4b5563', fontSize: '0.875rem' }}>
@@ -347,7 +354,7 @@ export default function UsersPage() {
             {(['fullName', 'email', 'password'] as const).map((field) => (
               <div key={field} style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>
-                  {{ fullName: 'ФИ', email: 'Email', password: 'Пароль' }[field]}
+                  {{ fullName: 'ФИО', email: 'Email', password: 'Пароль' }[field]}
                 </label>
                 <input
                   type={field === 'password' ? 'password' : 'text'}
