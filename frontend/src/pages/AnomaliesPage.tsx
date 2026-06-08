@@ -134,12 +134,12 @@ const AnomaliesPage = () => {
             <div className="stat-label">Низкие</div>
           </div>
           <div className="stat-card">
-            <div className="stat-dot fixed"></div>
+            <div className="stat-dot fixed-dot"></div>
             <div className="stat-value">{stats.fixed}</div>
             <div className="stat-label">Исправлены</div>
           </div>
           <div className="stat-card">
-            <div className="stat-dot hidden"></div>
+            <div className="stat-dot hidden-dot"></div>
             <div className="stat-value">{stats.hidden}</div>
             <div className="stat-label">Скрытые</div>
           </div>
@@ -325,8 +325,8 @@ const AnomaliesPage = () => {
         .stat-dot.critical { background-color: #ef4444; }
         .stat-dot.medium { background-color: #f59e0b; }
         .stat-dot.low { background-color: #3b82f6; }
-        .stat-dot.fixed { background-color: #10b981; }
-        .stat-dot.hidden { background-color: #8b5cf6; }
+        .stat-dot.fixed-dot { background-color: #10b981; }
+        .stat-dot.hidden-dot { background-color: #8b5cf6; }
         .stat-dot.incorrect { background-color: #f97316; }
         .stat-dot.insufficient { background-color: #64748b; }
 

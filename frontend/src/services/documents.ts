@@ -65,7 +65,7 @@ export const documentsService = {
   },
 
   getFileUrl(id: string): string {
-    return `/api/documents/${id}/file`
+    return `/documents/${id}/file`
   },
 
   // Проверить документ (валидация)
