@@ -65,7 +65,7 @@ export const documentsService = {
   },
 
   getFileUrl(id: string): string {
-    return `/documents/${id}/file`
+    return `http://localhost:3000/documents/${id}/file`
   },
 
   // Проверить документ (валидация)

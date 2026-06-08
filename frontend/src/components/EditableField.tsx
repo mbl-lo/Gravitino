@@ -4,12 +4,11 @@ import { updateDocumentField } from '../services/documents'
 interface EditableFieldProps {
   documentId: string
   fieldKey: string
-  fieldLabel: string
   value: string
   onUpdate: (newValue: string) => void
 }
 
-const EditableField = ({ documentId, fieldKey, fieldLabel, value, onUpdate }: EditableFieldProps) => {
+const EditableField = ({ documentId, fieldKey, value, onUpdate }: EditableFieldProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
   const [isLoading, setIsLoading] = useState(false)

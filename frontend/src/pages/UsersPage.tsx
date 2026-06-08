@@ -97,7 +97,7 @@ export default function UsersPage() {
       const res = await api.get<User[]>('/users');
       setUsers(res.data);
       setShowModal(false);
-      setForm({ fullName: '', email: '', password: '', role: 'operator' });
+      setForm({ fullName: '', email: '', password: '', role: 'operator', departmentId: '22222222-2222-4222-8222-222222222222' });
     } catch {
       setError('Ошибка при создании пользователя');
       setTimeout(() => setError(''), 3000);

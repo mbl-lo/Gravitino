@@ -257,7 +257,7 @@ const Section = ({ title, fields, doc, onUpdate, v, extra }: {
           <div style={styles.infoLabel}>{label}</div>
           <div style={styles.infoValue}>
             {isStatic ? key : (
-              <EditableField documentId={doc.id} fieldKey={key} fieldLabel={label} value={v(key)} onUpdate={val => onUpdate(key, val)} />
+              <EditableField documentId={doc.id} fieldKey={key} value={v(key)} onUpdate={val => onUpdate(key, val)} />
             )}
           </div>
         </div>
