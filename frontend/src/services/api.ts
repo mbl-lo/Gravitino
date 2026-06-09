@@ -169,4 +169,35 @@ export const confirmDocument = (documentId: string) => {
   return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
 }
 
+// --- НАСТРОЙКИ СИСТЕМЫ ---
+
+export interface SystemSettings {
+  maxFuelDeviation: number
+  maxWorkingHours: number
+  checkOdometerConsistency: boolean
+  autoDetectAnomalies: boolean
+  enabledFields: Record<string, boolean>
+  ocrMode: string
+  minConfidence: number
+  autoManualReview: boolean
+  auditLog: boolean
+  dataRetentionMonths: number
+  enable2FA: boolean
+}
+
+/** Получить текущие настройки системы */
+export const getSystemSettings = () => {
+  return api.get<SystemSettings>('/settings')
+}
+
+/** Сохранить измененные настройки */
+export const updateSystemSettings = (settings: SystemSettings) => {
+  return api.post('/settings', settings)
+}
+
+/** Получить список всех пользователей системы */
+export const getUsers = () => {
+  return api.get<any[]>('/users')
+}
+
 export default api

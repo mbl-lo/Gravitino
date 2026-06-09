@@ -10,6 +10,7 @@ import QueuePage from './pages/QueuePage'
 import './App.css'
 import AnomaliesPage from './pages/AnomaliesPage'
 import UsersPage from './pages/UsersPage'
+import SettingsPage from './pages/SettingsPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -92,11 +93,7 @@ function AppRoutes() {
       
       <Route path="/settings" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Настройки" 
-            icon="⚙️"
-            description="Настройки системы и параметры работы"
-          />
+          <SettingsPage />
         </ProtectedRoute>
       } />
       

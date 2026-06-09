@@ -52,6 +52,7 @@ const styles = {
     top: 0,
     bottom: 0,
     overflowY: 'auto' as const,
+    zIndex: 100,
   },
   logo: {
     padding: '24px 20px',
