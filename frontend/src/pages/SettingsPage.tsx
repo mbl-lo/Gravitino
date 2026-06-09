@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { getUsers } from '../services/api' // Импортируем наш метод API
 
 interface RoleTemplate {
