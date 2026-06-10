@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
 
@@ -7,7 +7,6 @@ const ArchivePage = () => {
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Состояния расширенного поиска (image_d50236.png)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [driverSearch, setDriverSearch] = useState('')
