@@ -52,23 +52,62 @@ export class DashboardService {
       documentNumber: a.document?.documentNumber || a.document?.originalFileName || 'PL-2026-00000',
     }));
 
-    const dailyStats = [
-      { day: 'Пн', processed: 100, warnings: 10, manual: 10 },
-      { day: 'Вт', processed: 110, warnings: 12, manual: 8 },
-      { day: 'Ср', processed: 90, warnings: 14, manual: 13 },
-      { day: 'Чт', processed: 75, warnings: 8, manual: 15 },
-      { day: 'Пт', processed: 115, warnings: 6, manual: 7 },
-      { day: 'Сб', processed: 80, warnings: 16, manual: 2 },
-      { day: 'Вс', processed: 50, warnings: 7, manual: 5 },
-    ];
+    const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
-    const fieldAccuracy = [
-      { name: 'Пробег', value: 97 },
-      { name: 'Топливо', value: 91 },
-      { name: 'Время работы', value: 94 },
-      { name: 'Подписи', value: 82 },
-      { name: 'Номер автомобиля', value: 98 },
-    ];
+    const today = new Date(new Date().setHours(0, 0, 0, 0));
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 6);
+
+    const recentDocs = await this.prisma.document.findMany({
+      where: { createdAt: { gte: weekAgo } },
+      select: {
+        createdAt: true,
+        status: true,
+        hasAnomalies: true,
+        fields: { select: { isEdited: true } },
+      },
+    });
+
+    const dailyStatsMap = new Map<string, { processed: number; warnings: number; manual: number }>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekAgo);
+      d.setDate(weekAgo.getDate() + i);
+      dailyStatsMap.set(d.toISOString().slice(0, 10), { processed: 0, warnings: 0, manual: 0 });
+    }
+
+    for (const doc of recentDocs) {
+      const bucket = dailyStatsMap.get(doc.createdAt.toISOString().slice(0, 10));
+      if (!bucket) continue;
+      if (doc.status === 'processed' || doc.status === 'confirmed') bucket.processed++;
+      if (doc.hasAnomalies) bucket.warnings++;
+      if (doc.fields.some(f => f.isEdited)) bucket.manual++;
+    }
+
+    const dailyStats = Array.from(dailyStatsMap.entries()).map(([dateKey, counts]) => ({
+      day: dayLabels[new Date(dateKey).getUTCDay()],
+      ...counts,
+    }));
+
+    const fieldGroups: Record<string, string[]> = {
+      'Пробег': ['odometer_start', 'odometer_end', 'mileage'],
+      'Топливо': ['fuel_start', 'fuel_end', 'fuel_issued', 'fuel_consumption', 'fuel_rate'],
+      'Время работы': ['departure_time', 'arrival_time', 'total_hours', 'downtime_hours'],
+      'Подписи': ['signature_driver', 'signature_mechanic', 'signature_dispatcher', 'medical_check'],
+      'Номер автомобиля': ['vehicle_plate', 'vehicle_model'],
+    };
+
+    const fieldConfidences = await this.prisma.documentField.findMany({
+      where: { fieldKey: { in: Object.values(fieldGroups).flat() }, confidence: { not: null } },
+      select: { fieldKey: true, confidence: true },
+    });
+
+    const fieldAccuracy = Object.entries(fieldGroups).map(([name, keys]) => {
+      const values = fieldConfidences
+        .filter(f => keys.includes(f.fieldKey))
+        .map(f => Number(f.confidence));
+      const avg = values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length) * 100 : 0;
+      return { name, value: Math.round(avg) };
+    });
 
     return {
       cards: {

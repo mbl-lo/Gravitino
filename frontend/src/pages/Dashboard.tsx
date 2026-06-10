@@ -51,7 +51,7 @@ const Dashboard = () => {
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Обработано сегодня</span>
-            <span className="metric-value">{data.cards.processedToday || 130}</span>
+            <span className="metric-value">{data.cards.processedToday}</span>
           </div>
           <span className="metric-icon blue-icon">📄</span>
         </div>
@@ -84,10 +84,15 @@ const Dashboard = () => {
           <h3 className="panel-title">Динамика обработки</h3>
           <div className="chart-axis-y-container">
             <div className="chart-bars-area">
-              {data.dailyStats.map(item => {
-                const hProcessed = (item.processed / 180) * 140
-                const hWarnings = (item.warnings / 180) * 140
-                const hManual = (item.manual / 180) * 140
+              {(() => {
+                const maxValue = Math.max(
+                  1,
+                  ...data.dailyStats.flatMap(item => [item.processed, item.warnings, item.manual]),
+                )
+                return data.dailyStats.map(item => {
+                const hProcessed = (item.processed / maxValue) * 140
+                const hWarnings = (item.warnings / maxValue) * 140
+                const hManual = (item.manual / maxValue) * 140
                 return (
                   <div key={item.day} className="chart-column-group">
                     <div className="bars-sub-grid">
@@ -98,7 +103,8 @@ const Dashboard = () => {
                     <span className="day-label">{item.day}</span>
                   </div>
                 )
-              })}
+              })
+              })()}
             </div>
           </div>
           <div className="chart-legend">
@@ -183,9 +189,9 @@ const Dashboard = () => {
         /* Pure HTML/CSS Bar Chart Engine */
         .chart-axis-y-container { border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 16px; position: relative; }
         .chart-bars-area { height: 170px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 16px; }
-        .chart-column-group { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
-        .bars-sub-grid { display: flex; align-items: flex-end; gap: 4px; height: 140px; }
-        .bar { width: 35px; border-radius: 6px 6px 0 0; transition: transform 0.2s; cursor: pointer; }
+        .chart-column-group { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .bars-sub-grid { display: flex; align-items: flex-end; gap: 3px; height: 140px; }
+        .bar { width: 24px; border-radius: 6px 6px 0 0; transition: transform 0.2s; cursor: pointer; }
         .bar:hover { transform: scaleY(1.05); }
         .bar-processed { background-color: #2563eb; }
         .bar-warning { background-color: #f59e0b; }
