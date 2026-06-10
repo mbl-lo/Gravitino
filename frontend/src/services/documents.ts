@@ -38,8 +38,14 @@ export interface Document {
 }
 
 export const documentsService = {
-  async getDocumentsList(): Promise<Document[]> {
-    const response = await api.get('/documents')
+  async getDocumentsList(filters?: {
+    search?: string,
+    status?: string
+    hasAnomalies?: boolean,
+    fromDate?: string,
+    toDate?: string,
+  }): Promise<Document[]> {
+    const response = await api.get('/documents', { params: filters })
     return response.data
   },
 

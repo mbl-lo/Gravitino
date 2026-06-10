@@ -11,6 +11,7 @@ import './App.css'
 import AnomaliesPage from './pages/AnomaliesPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
+import ArchivePage from './pages/ArchivePage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -51,11 +52,7 @@ function AppRoutes() {
       
       <Route path="/archive" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Архив путевых листов" 
-            icon="📁"
-            description="Все обработанные документы"
-          />
+          <ArchivePage />
         </ProtectedRoute>
       } />
       

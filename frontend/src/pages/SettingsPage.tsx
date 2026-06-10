@@ -158,9 +158,9 @@ const SettingsPage = () => {
             <div style={styles.verticalFormGroup}>
               <label style={styles.inputLabel}>Режим распознавания</label>
               <select value={ocrMode} onChange={e => setOcrMode(e.target.value)} style={styles.select}>
+                <option value="fast">Быстрый (90% точность, 2 сек)</option>
                 <option value="balanced">Сбалансированный (95% точность, 4 сек)</option>
-                <option value="fast">Скоростной (90% точность, 1.5 сек)</option>
-                <option value="maximum">Максимальный (99% точность, 12 сек)</option>
+                <option value="maximum">Максимальная точность (98% точность, 8 сек)</option>
               </select>
             </div>
             <div style={styles.verticalFormGroup}>

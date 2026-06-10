@@ -28,7 +28,7 @@ export class DocumentsService {
     };
   }
 
-  async getDocumentsList(filters: {
+  async getDocumentsList(filters?: {
     search?: string;
     status?: string;
     hasAnomalies?: boolean;
@@ -37,22 +37,24 @@ export class DocumentsService {
   }) {
     const where: any = {};
 
-    if (filters.search) {
-      where.originalFileName = {
-        contains: filters.search,
-        mode: 'insensitive',
-      };
+    if (filters?.search) {
+      where.OR = [
+        { originalFileName: { contains: filters.search, mode: 'insensitive' } },
+        { documentNumber: { contains: filters.search, mode: 'insensitive' } },
+      ];
     }
 
-    if (filters.status) {
+    if (filters?.status) {
       where.status = filters.status;
+    } else {
+      where.ocrStatus = { in: ['pending', 'processing', 'error', 'completed'] };
     }
 
-    if (filters.hasAnomalies !== undefined) {
+    if (filters?.hasAnomalies !== undefined) {
       where.hasAnomalies = filters.hasAnomalies;
     }
 
-    if (filters.fromDate || filters.toDate) {
+    if (filters?.fromDate || filters?.toDate) {
       where.createdAt = {};
       if (filters.fromDate) {
         where.createdAt.gte = filters.fromDate;
@@ -63,26 +65,14 @@ export class DocumentsService {
     }
 
     return this.prisma.document.findMany({
-      select: {
-        id: true,
-        originalFileName: true,
-        fileSize: true,
-        status: true,
-        ocrStatus: true,
-        hasAnomalies: true,
-        createdAt: true,
+      where: where,
+      include: {
+        fields: true,     
+        anomalies: true,
       },
-
-      where: {
-        ocrStatus: {
-          in: ['pending', 'processing', 'error', 'completed'],
-        },
-      },
-
       orderBy: {
         createdAt: 'desc',
       },
- 
     });
   }
 
