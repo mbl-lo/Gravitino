@@ -190,7 +190,7 @@ const Dashboard = () => {
         .chart-axis-y-container { border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 16px; position: relative; }
         .chart-bars-area { height: 170px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 16px; }
         .chart-column-group { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; min-width: 0; }
-        .bars-sub-grid { display: flex; align-items: flex-end; gap: 3px; height: 140px; }
+        .bars-sub-grid { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 0 6px; background: #f8fafc; border-radius: 8px; }
         .bar { width: 24px; border-radius: 6px 6px 0 0; transition: transform 0.2s; cursor: pointer; }
         .bar:hover { transform: scaleY(1.05); }
         .bar-processed { background-color: #2563eb; }

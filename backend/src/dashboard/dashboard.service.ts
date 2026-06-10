@@ -54,6 +54,9 @@ export class DashboardService {
 
     const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
+    const localDateKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
     const today = new Date(new Date().setHours(0, 0, 0, 0));
     const weekAgo = new Date(today);
     weekAgo.setDate(today.getDate() - 6);
@@ -68,23 +71,23 @@ export class DashboardService {
       },
     });
 
-    const dailyStatsMap = new Map<string, { processed: number; warnings: number; manual: number }>();
+    const dailyStatsMap = new Map<string, { day: number; processed: number; warnings: number; manual: number }>();
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekAgo);
       d.setDate(weekAgo.getDate() + i);
-      dailyStatsMap.set(d.toISOString().slice(0, 10), { processed: 0, warnings: 0, manual: 0 });
+      dailyStatsMap.set(localDateKey(d), { day: d.getDay(), processed: 0, warnings: 0, manual: 0 });
     }
 
     for (const doc of recentDocs) {
-      const bucket = dailyStatsMap.get(doc.createdAt.toISOString().slice(0, 10));
+      const bucket = dailyStatsMap.get(localDateKey(doc.createdAt));
       if (!bucket) continue;
       if (doc.status === 'processed' || doc.status === 'confirmed') bucket.processed++;
       if (doc.hasAnomalies) bucket.warnings++;
       if (doc.fields.some(f => f.isEdited)) bucket.manual++;
     }
 
-    const dailyStats = Array.from(dailyStatsMap.entries()).map(([dateKey, counts]) => ({
-      day: dayLabels[new Date(dateKey).getUTCDay()],
+    const dailyStats = Array.from(dailyStatsMap.values()).map(({ day, ...counts }) => ({
+      day: dayLabels[day],
       ...counts,
     }));
 
