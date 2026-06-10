@@ -89,6 +89,59 @@ const getStatusColor = () => {
   return '#f59e0b'
 }
 
+  const handleExportJson = () => {
+    if (!document) return
+
+    const docNumber = getFieldValue('document_number')
+
+    const exportData = {
+      documentNumber: docNumber,
+      status: document.status,
+      hasAnomalies: document.hasAnomalies,
+      ocrConfidence: document.ocrConfidence,
+      tripDate: document.tripDate,
+      createdAt: document.createdAt,
+      fields: Object.fromEntries(
+        (document.fields ?? []).map((field) => [
+          field.fieldKey,
+          {
+            label: field.fieldLabel,
+            value: field.correctedValue ?? field.recognizedValue,
+            isEdited: field.isEdited ?? false,
+          },
+        ]),
+      ),
+      anomalies: (document.anomalies ?? []).map((anomaly) => {
+        const a = anomaly as unknown as {
+          type: string
+          severity: string
+          fieldKey?: string
+          message?: string
+          expectedValue?: string
+          actualValue?: string
+          status?: string
+        }
+        return {
+          type: a.type,
+          severity: a.severity,
+          fieldKey: a.fieldKey,
+          message: a.message,
+          expectedValue: a.expectedValue,
+          actualValue: a.actualValue,
+          status: a.status,
+        }
+      }),
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `document-${docNumber !== '—' ? docNumber : document.id}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleFieldUpdate = async (fieldKey: string, newValue: string) => {
   if (!id) return;
   try {
@@ -136,7 +189,7 @@ const getStatusColor = () => {
             style={{ ...styles.confirmButton, opacity: isConfirming ? 0.6 : 1, cursor: isConfirming ? 'not-allowed' : 'pointer' }}>
             {isConfirming ? 'Сохранение...' : 'Подтвердить'}
           </button>
-          <button style={styles.exportButton}>Экспорт JSON</button>
+          <button onClick={handleExportJson} style={styles.exportButton}>Экспорт JSON</button>
         </div>
       </div>
 
