@@ -81,9 +81,10 @@ const AnomaliesPage = () => {
 
   // Подсчет статистики (только для активных аномалий)
   const stats = {
+    hight: anomalies.filter(a => a.severity === 'high' && a.status !== 'fixed').length,
     critical: anomalies.filter(a => a.severity === 'critical' && a.status !== 'fixed').length,
     medium: anomalies.filter(a => a.severity === 'medium' && a.status !== 'fixed').length,
-    low: anomalies.filter(a => (a.severity === 'low' || a.severity === 'high') && a.status !== 'fixed').length,
+    low: anomalies.filter(a => a.severity === 'low'  && a.status !== 'fixed').length,
     fixed: anomalies.filter(a => a.status === 'fixed').length,
     hidden: anomalies.filter(a => a.status === 'hidden').length,
     incorrect: anomalies.filter(a => a.status === 'incorrect').length,
@@ -118,6 +119,11 @@ const AnomaliesPage = () => {
       <div className="container">
         {/* Статистика */}
         <div className="stats-grid">
+        <div className="stat-card">
+            <div className="stat-dot high"></div>
+            <div className="stat-value">{stats.hight}</div>
+            <div className="stat-label">Высокие</div>
+          </div>
           <div className="stat-card">
             <div className="stat-dot critical"></div>
             <div className="stat-value">{stats.critical}</div>
@@ -322,6 +328,7 @@ const AnomaliesPage = () => {
           margin: 0 auto 6px;
         }
 
+        .stat-dot.high { background-color: #d40000; }
         .stat-dot.critical { background-color: #ef4444; }
         .stat-dot.medium { background-color: #f59e0b; }
         .stat-dot.low { background-color: #3b82f6; }

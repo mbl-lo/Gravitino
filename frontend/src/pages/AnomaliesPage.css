@@ -69,6 +69,7 @@
   margin: 0 auto 8px;
 }
 
+.stat-dot.stat-high { background-color: #d40000; }
 .stat-dot.stat-critical { background-color: #ef4444; }
 .stat-dot.stat-medium { background-color: #f59e0b; }
 .stat-dot.stat-low { background-color: #3b82f6; }
@@ -199,6 +200,12 @@ box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);}
   padding: 4px 10px;
   border-radius: 20px;
   font-weight: 500;
+}
+
+
+.severity-high {
+  background: #fee2e2;
+  color: #ff0000;
 }
 
 .severity-critical {
