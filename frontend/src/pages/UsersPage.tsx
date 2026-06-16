@@ -107,9 +107,16 @@ export default function UsersPage() {
   }
 
   async function handleDeactivate(id: string) {
-    await api.patch(`/users/${id}/deactivate`);
+    var result = await api.patch(`/users/${id}/deactivate`);
     setUsers((prev) => prev.map((u) => u.id === id ? { ...u, isActive: !u.isActive } : u));
     setMenuOpenId(null);
+    if (result.data.isActive) {
+      alert('Пользователь активирован');
+    }
+    else
+    {
+      alert('Пользователь деактивирован');
+    }
   }
 
   async function handleDelete(id: string) {
@@ -117,6 +124,7 @@ export default function UsersPage() {
     await api.delete(`/users/${id}`);
     setUsers((prev) => prev.filter((u) => u.id !== id));
     setMenuOpenId(null);
+    alert('Пользователь удален');
   }
 
   async function handleEdit() {

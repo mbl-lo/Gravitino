@@ -1,5 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { CurrentUser } from '../auth/current-user.decorator'
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -21,12 +24,16 @@ export class UsersController {
   }
 
   @Patch(':id/deactivate')
-  async deactivate(@Param('id') id: string) {
-    return this.usersService.deactivate(id);
+  @UseGuards(JwtAuthGuard)
+  async deactivate(@Param('id') id: string, @CurrentUser() admin: any) {
+
+    return this.usersService.deactivate(id, admin.id );
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  @UseGuards(JwtAuthGuard)
+  async remove(@Param('id') id: string, @CurrentUser() admin: any) {
+
+    return this.usersService.remove(id, admin.id );
   }
 }
