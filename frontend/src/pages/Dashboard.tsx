@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ClockCircleOutlined, FileTextOutlined, RiseOutlined, WarningOutlined } from '@ant-design/icons'
 import { getDashboardStats } from '../services/api'
 
 interface DashboardData {
@@ -53,30 +54,30 @@ const Dashboard = () => {
             <span className="metric-title">Обработано сегодня</span>
             <span className="metric-value">{data.cards.processedToday}</span>
           </div>
-          <span className="metric-icon blue-icon">📄</span>
+          <span className="metric-icon blue-icon"><FileTextOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Средняя точность OCR</span>
             <span className="metric-value">{data.cards.avgOcrAccuracy}%</span>
           </div>
-          <span className="metric-icon green-icon">📈</span>
+          <span className="metric-icon green-icon"><RiseOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Найдено аномалий</span>
             <span className="metric-value red-text">{data.cards.activeAnomaliesCount}</span>
-            <span className="metric-trend danger-text">⚠️ Требуют проверки</span>
+            <span className="metric-trend danger-text"><WarningOutlined /> Требуют проверки</span>
           </div>
-          <span className="metric-icon orange-icon">⚠️</span>
+          <span className="metric-icon orange-icon"><WarningOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Ожидают проверки</span>
             <span className="metric-value">{data.cards.waitingReview}</span>
-            <span className="metric-trend text-muted">🕒 В очереди</span>
+            <span className="metric-trend text-muted"><ClockCircleOutlined /> В очереди</span>
           </div>
-          <span className="metric-icon gray-icon">🕒</span>
+          <span className="metric-icon gray-icon"><ClockCircleOutlined /></span>
         </div>
       </div>
       <div className="middle-section-layout">

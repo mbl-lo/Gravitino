@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import EditableField from '../components/EditableField'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { CheckCircleOutlined, FileTextOutlined, IssuesCloseOutlined, WarningOutlined } from '@ant-design/icons'
 import { documentsService, Document, updateDocumentField } from '../services/documents'
 
 const DocumentDetail = () => {
@@ -82,10 +83,10 @@ const DocumentDetail = () => {
 }
 
 const getStatusColor = () => {
-  if (document?.status === 'confirmed') return '#10b981'
-  if (document?.status === 'processing') return '#3b82f6'
-  if (document?.hasAnomalies || document?.status === 'needs_review') return '#ef4444'
-  if (document?.status === 'processed') return '#10b981' // Зеленый для успешной проверки
+  if (document?.status === 'confirmed') return '#16a34a'
+  if (document?.status === 'processing') return '#2563eb'
+  if (document?.hasAnomalies || document?.status === 'needs_review') return '#ea580c'
+  if (document?.status === 'processed') return '#16a34a' // Зеленый для успешной проверки
   return '#f59e0b'
 }
 
@@ -210,7 +211,7 @@ const getStatusColor = () => {
                 style={styles.documentImage} onError={() => setImageError(true)} />
             ) : (
               <div style={styles.imagePlaceholder}>
-                <span style={styles.imagePlaceholderIcon}>📄</span>
+                <span style={styles.imagePlaceholderIcon}><FileTextOutlined /></span>
                 <p>Нет изображения</p>
                 <a href={documentsService.getFileUrl(document.id)} target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>Скачать файл</a>
               </div>
@@ -264,23 +265,36 @@ const getStatusColor = () => {
               ['Подпись механика', v('signature_mechanic')],
               ['Подпись диспетчера', v('signature_dispatcher')],
               ['Медосмотр пройден', v('medical_check')],
-            ].map(([label, val], i) => (
-              <div style={styles.infoRow} key={i}>
-                <div style={styles.infoLabel}>{label}</div>
-                <div style={styles.infoValue}>{val === 'Распознана' || val === 'Да' ? `✅ ${val}` : `❌ ${val}`}</div>
-              </div>
-            ))}
+            ].map(([label, val], i) => {
+              const isRecognized = val === 'Распознана' || val === 'Да'
+              return (
+                <div style={styles.infoRow} key={i}>
+                  <div style={styles.infoLabel}>{label}</div>
+                  <div style={{ ...styles.infoValue, ...(isRecognized ? styles.successText : styles.errorTextInline) }}>
+                    {isRecognized ? <CheckCircleOutlined /> : <IssuesCloseOutlined />} {val}
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Проверка данных</h2>
             {[
-              ['✅', 'Пробег рассчитан корректно'],
-              ['⚠️', 'Расход топлива выше нормы на 18%'],
-              ['❌', 'Подпись механика не распознана'],
-              ['✅', 'Время возвращения позже времени выезда'],
-            ].map(([icon, text], i) => (
-              <div style={styles.validationItem} key={i}><span>{icon}</span><span>{text}</span></div>
+              ['success', 'Пробег рассчитан корректно'],
+              ['warning', 'Расход топлива выше нормы на 18%'],
+              ['error', 'Подпись механика не распознана'],
+              ['success', 'Время возвращения позже времени выезда'],
+            ].map(([type, text], i) => (
+              <div style={styles.validationItem} key={i}>
+                <span style={{
+                  ...styles.validationIcon,
+                  ...(type === 'success' ? styles.successText : type === 'warning' ? styles.warningText : styles.errorTextInline),
+                }}>
+                  {type === 'success' ? <CheckCircleOutlined /> : type === 'warning' ? <WarningOutlined /> : <IssuesCloseOutlined />}
+                </span>
+                <span>{text}</span>
+              </div>
             ))}
           </div>
 
@@ -337,6 +351,9 @@ const styles = {
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280' },
   errorContainer: { textAlign: 'center' as const, padding: '48px' },
   errorText: { color: '#ef4444', marginBottom: '16px' },
+  successText: { color: '#16a34a' },
+  warningText: { color: '#ea580c' },
+  errorTextInline: { color: '#ef4444' },
   backButton: { padding: '8px 16px', backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer' },
   twoColumns: { display: 'flex', gap: '32px', flexWrap: 'wrap' as const, alignItems: 'flex-start' },
   leftColumn: { flex: '1.2', minWidth: '300px' },
@@ -352,7 +369,8 @@ const styles = {
   infoRow: { display: 'flex', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' as const },
   infoLabel: { width: '180px', fontWeight: '500', color: '#6b7280', flexShrink: 0 },
   infoValue: { flex: 1, color: '#1f2937' },
-  validationItem: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' },
+  validationItem: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', color: '#334155' },
+  validationIcon: { width: '18px', height: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   commentText: { color: '#4b5563', lineHeight: 1.5, margin: 0 },
 }
 
