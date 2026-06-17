@@ -18,6 +18,7 @@ const QueuePage = () => {
       const mappedData: QueueDocument[] = response.data.map((doc: any) => {
         let displayStatus: QueueDocument['status'] = 'uploaded';
 
+        if (doc.ocrStatus === 'pending') displayStatus = 'uploaded';
         if (doc.status === 'processing') displayStatus = 'processing';
         else if (doc.status === 'needs_review') displayStatus = 'needs_review';
         else if (doc.status === 'confirmed') displayStatus = 'confirmed';
@@ -132,7 +133,7 @@ const QueuePage = () => {
                     )}
 
                     {/* Кнопка распознавания — только для загруженных */}
-                    {doc.status === 'uploaded' && (
+                    {doc.status === 'uploaded'  && (
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => handleRunOcr(doc.id)}

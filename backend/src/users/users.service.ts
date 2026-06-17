@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 
@@ -53,15 +53,32 @@ export class UsersService {
     return this.prisma.user.update({ where: { id }, data, select: { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true } });
   }
 
-  async deactivate(id: string) {
+  async deactivate(id: string, initiatorId: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Пользователь не найден');
+
+    if (id === initiatorId) {
+    throw new BadRequestException('Вы не можете деактивировать собственный аккаунт');
+    }
+
+    if (user.email?.toLowerCase() ==='admin@gravitino.local') { 
+      throw new BadRequestException('Невозможно деактивировать главного администратора');
+    }
+
     return this.prisma.user.update({ where: { id }, data: { isActive: !user.isActive }, select: { id: true, isActive: true } });
   }
 
-  async remove(id: string) {
+  async remove(id: string, initiatorId: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Пользователь не найден');
+
+    if (id === initiatorId) {
+    throw new BadRequestException('Вы не можете удалить собственный аккаунт');
+    }
+
+    if (user.email?.toLowerCase() ==='admin@gravitino.local') { 
+      throw new BadRequestException('Невозможно удалить главного администратора');
+    }
     await this.prisma.user.delete({ where: { id } });
     return { message: 'Пользователь удалён' };
   }
