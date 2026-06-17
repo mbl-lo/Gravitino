@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class DocumentsService {
@@ -90,6 +91,55 @@ export class DocumentsService {
       totalCount: documents.length,
       documents,
     };
+  }
+
+  private docToRow(doc: any) {
+    const f = (key: string) => {
+      const field = doc.fields?.find((f: any) => f.fieldKey === key);
+      return field?.correctedValue ?? field?.recognizedValue ?? '';
+    };
+    return {
+      'Номер документа': doc.documentNumber ?? '',
+      'Дата': doc.tripDate ? new Date(doc.tripDate).toLocaleDateString('ru-RU') : '',
+      'Водитель': f('driver_name'),
+      'Табельный номер': f('driver_number'),
+      'Автомобиль': f('vehicle_model'),
+      'Госномер': f('vehicle_plate'),
+      'Маршрут': f('route'),
+      'Пробег (км)': f('mileage'),
+      'Расход топлива (л)': f('fuel_consumption'),
+      'Статус': doc.status,
+      'Точность OCR (%)': doc.ocrConfidence ? (Number(doc.ocrConfidence) * 100).toFixed(1) : '',
+      'Аномалии': doc.hasAnomalies ? 'Да' : 'Нет',
+    };
+  }
+
+  async exportToCsv(filters: { search?: string; status?: string; hasAnomalies?: boolean; fromDate?: Date; toDate?: Date }) {
+    const documents = await this.getDocumentsList(filters);
+    const rows = documents.map(doc => this.docToRow(doc));
+    if (rows.length === 0) return 'Номер документа,Дата,Водитель\n';
+    const headers = Object.keys(rows[0]);
+    const lines = [
+      headers.join(';'),
+      ...rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(';')),
+    ];
+    return lines.join('\n');
+  }
+
+  async exportToXlsx(filters: { search?: string; status?: string; hasAnomalies?: boolean; fromDate?: Date; toDate?: Date }): Promise<Buffer> {
+    const documents = await this.getDocumentsList(filters);
+    const rows = documents.map(doc => this.docToRow(doc));
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Путевые листы');
+
+    if (rows.length > 0) {
+      sheet.columns = Object.keys(rows[0]).map(key => ({ header: key, key, width: 20 }));
+      sheet.getRow(1).font = { bold: true };
+      rows.forEach(row => sheet.addRow(row));
+    }
+
+    return workbook.xlsx.writeBuffer() as unknown as Promise<Buffer>;
   }
 
   async findOne(id: string) {

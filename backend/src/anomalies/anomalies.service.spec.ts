@@ -57,7 +57,8 @@ describe('AnomaliesService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AnomaliesService(prisma as never);
+    const mockSettings = { get: jest.fn().mockResolvedValue({ maxFuelDeviation: 20 }) };
+    service = new AnomaliesService(prisma as never, mockSettings as never);
 
     prisma.validationRule.upsert.mockImplementation(({ where }) =>
       Promise.resolve({ id: `rule-${where.code}`, code: where.code }),

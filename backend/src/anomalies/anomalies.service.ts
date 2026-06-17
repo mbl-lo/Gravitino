@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 
 type DocumentFieldValue = {
   fieldKey: string;
@@ -19,7 +20,10 @@ type PreparedAnomaly = {
 
 @Injectable()
 export class AnomaliesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settings: SettingsService,
+  ) {}
 
   async validateDocument(documentId: string) {
     const document = await this.prisma.document.findUnique({
@@ -122,12 +126,15 @@ export class AnomaliesService {
       });
     }
 
+    const { maxFuelDeviation } = await this.settings.get();
+
     const fuelAnomaly = this.checkFuel(
       document.fields,
       odometerStart,
       odometerEnd,
       document.vehicle?.fuelRatePer100km,
       fuelRule.id,
+      maxFuelDeviation,
     );
 
     if (fuelAnomaly) {
@@ -207,6 +214,7 @@ export class AnomaliesService {
     odometerEnd: number | null,
     vehicleFuelRate: unknown,
     validationRuleId: string,
+    maxFuelDeviationPercent: number = 20,
   ): PreparedAnomaly | null {
     if (
       odometerStart === null ||
@@ -234,7 +242,7 @@ export class AnomaliesService {
 
     const mileage = odometerEnd - odometerStart;
     const expectedFuel = (mileage / 100) * fuelRate;
-    const maxFuel = expectedFuel * 1.2;
+    const maxFuel = expectedFuel * (1 + maxFuelDeviationPercent / 100);
 
     if (fuelUsed <= maxFuel) {
       return null;

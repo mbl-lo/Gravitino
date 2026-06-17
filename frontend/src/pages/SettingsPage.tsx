@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getUsers } from '../services/api' // Импортируем наш метод API
+import { getUsers, getSystemSettings, updateSystemSettings } from '../services/api'
 
 interface RoleTemplate {
   role: string
@@ -36,10 +36,22 @@ const SettingsPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await getUsers()
-        setUsers(response.data)
+        const [usersRes, settingsRes] = await Promise.all([getUsers(), getSystemSettings()])
+        setUsers(usersRes.data)
+        const s = settingsRes.data
+        setMaxFuelDeviation(s.maxFuelDeviation)
+        setMaxWorkingHours(s.maxWorkingHours)
+        setCheckOdometer(s.checkOdometerConsistency)
+        setAutoDetectAnomalies(s.autoDetectAnomalies)
+        if (s.enabledFields && Object.keys(s.enabledFields).length > 0) setFields(s.enabledFields)
+        setOcrMode(s.ocrMode)
+        setMinConfidence(s.minConfidence)
+        setAutoManualReview(s.autoManualReview)
+        setAuditLog(s.auditLog)
+        setDataRetention(s.dataRetentionMonths)
+        setEnable2FA(s.enable2FA)
       } catch (err) {
-        console.error('Не удалось загрузить пользователей:', err)
+        console.error('Не удалось загрузить данные:', err)
       } finally {
         setIsLoadingUsers(false)
       }
@@ -67,7 +79,19 @@ const SettingsPage = () => {
     setIsSaving(true)
     setSuccessMessage('')
     try {
-      await new Promise(resolve => setTimeout(resolve, 600))
+      await updateSystemSettings({
+        maxFuelDeviation,
+        maxWorkingHours,
+        checkOdometerConsistency: checkOdometer,
+        autoDetectAnomalies,
+        enabledFields: fields,
+        ocrMode,
+        minConfidence,
+        autoManualReview,
+        auditLog,
+        dataRetentionMonths: dataRetention,
+        enable2FA,
+      })
       setSuccessMessage('Конфигурация системы успешно сохранена!')
     } catch (err) {
       console.error(err)

@@ -50,25 +50,38 @@ export class DocumentsController {
   @Get('export')
   async exportDocuments(
     @Res({ passthrough: true }) res: Response,
+    @Query('format') format?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('hasAnomalies') hasAnomalies?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
   ) {
-    const result = await this.documentsService.exportToJson({
+    const filters = {
       search,
       status,
       hasAnomalies: hasAnomalies === 'true' ? true : hasAnomalies === 'false' ? false : undefined,
       fromDate: fromDate ? new Date(fromDate) : undefined,
       toDate: toDate ? new Date(toDate) : undefined,
-    });
+    };
+    const ts = Date.now();
+    const fmt = (format ?? 'json').toUpperCase();
 
-    res.set({
-      'Content-Type': 'application/json',
-      'Content-Disposition': `attachment; filename="documents-export-${Date.now()}.json"`,
-    });
+    if (fmt === 'CSV') {
+      const csv = await this.documentsService.exportToCsv(filters);
+      res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="documents-${ts}.csv"` });
+      return csv;
+    }
 
+    if (fmt === 'XLSX') {
+      const buffer = await this.documentsService.exportToXlsx(filters);
+      res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="documents-${ts}.xlsx"` });
+      res.send(buffer);
+      return;
+    }
+
+    const result = await this.documentsService.exportToJson(filters);
+    res.set({ 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="documents-${ts}.json"` });
     return result;
   }
 
