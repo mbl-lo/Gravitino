@@ -11,7 +11,7 @@ async function bootstrap() {
   });
 
   await app.listen(3000);
-  console.log('API: http://localhost:3000');
+  console.log('API: http://26.168.132.196:3000');
 }
 
 bootstrap();

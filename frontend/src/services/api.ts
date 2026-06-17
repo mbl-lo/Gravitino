@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',  // Прокси на localhost:3000
+  baseURL: 'http://26.168.132.196:3000',  // Прокси на localhost:3000
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -197,6 +197,7 @@ export const updateSystemSettings = (settings: SystemSettings) => {
 
 /** Получить список всех пользователей системы */
 export const getUsers = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return api.get<any[]>('/users')
 }
 
