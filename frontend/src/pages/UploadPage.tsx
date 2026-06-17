@@ -229,7 +229,7 @@ const UploadPage = () => {
 
       {/* Прямоугольник 3: нижняя панель */}
       <div className="action-bar">
-        <button className="btn-cancel" onClick={() => navigate('/archive')}>Отменить</button>
+        <button className="btn-cancel">Отменить</button>
         <button className="btn-submit" onClick={handleUpload} disabled={isUploading || selectedFiles.length === 0}>
           {isUploading ? 'Загрузка...' : 'Запустить распознавание'}
         </button>

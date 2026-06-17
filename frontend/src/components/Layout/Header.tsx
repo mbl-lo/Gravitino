@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BellOutlined, SearchOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const nameParts = user?.fullName?.trim().split(' ').filter(Boolean) ?? []
   const displayName = nameParts.length >= 2 ? `${nameParts[1]} ${nameParts[0]}` : user?.fullName || 'Оператор Иванов'
@@ -16,6 +18,11 @@ const Header = () => {
 
   const handleNotifications = () => {
     console.log('Уведомления')
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
   }
 
   return (
@@ -49,6 +56,10 @@ const Header = () => {
             <span style={styles.userStatus}>Активен</span>
           </div>
         </div>
+
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Выйти
+        </button>
       </div>
     </header>
   )
@@ -168,6 +179,15 @@ const styles = {
     fontSize: '12px',
     lineHeight: '16px',
     color: '#6b7280',
+  },
+  logoutButton: {
+    padding: '6px 12px',
+    backgroundColor: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '0.75rem',
   },
 }
 

@@ -85,6 +85,7 @@ const QueuePage = () => {
   const [filters, setFilters] = useState<AppliedFilters>({ fromDate: '', toDate: '', driver: '', vehicle: '' })
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({ fromDate: '', toDate: '', driver: '', vehicle: '' })
   const fetchQueueRef = useRef<() => Promise<void>>(() => Promise.resolve())
+  const [driverSearch, setDriverSearch] = useState('')
 
   const fetchQueue = useCallback(async () => {
     try {
@@ -199,17 +200,9 @@ const QueuePage = () => {
             />
           </div>
           <div className="queue-filter-field">
-            <label>Водитель</label>
-            <select
-              value={filters.driver}
-              onChange={event => setFilters(prev => ({ ...prev, driver: event.target.value }))}
-            >
-              <option value="">Все водители</option>
-              {driverOptions.map(driver => (
-                <option key={driver} value={driver}>{driver}</option>
-              ))}
-            </select>
-          </div>
+              <label>Водитель</label>
+              <input type="text" placeholder="ФИО водителя" value={driverSearch} onChange={e => setDriverSearch(e.target.value)} />
+            </div>
           <div className="queue-filter-field">
             <label>Автомобиль</label>
             <input
