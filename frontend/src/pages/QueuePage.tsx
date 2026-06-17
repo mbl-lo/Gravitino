@@ -140,14 +140,17 @@ const QueuePage = () => {
   }
 
   const filteredDocuments = documents.filter(doc => {
+
+    if (driverSearch.trim()) {
+      const driver = getFieldValue(doc.fields, 'driver_name').toLowerCase()
+      if (!driver.includes(driverSearch.toLowerCase())) return false
+    }
+
     if (activeStatus !== 'all' && doc.displayStatus !== activeStatus) return false
 
     const createdDate = doc.createdAt ? doc.createdAt.slice(0, 10) : ''
     if (appliedFilters.fromDate && createdDate && createdDate < appliedFilters.fromDate) return false
     if (appliedFilters.toDate && createdDate && createdDate > appliedFilters.toDate) return false
-
-    const driver = getFieldValue(doc.fields, 'driver_name').toLowerCase()
-    if (appliedFilters.driver.trim() && !driver.includes(appliedFilters.driver.trim().toLowerCase())) return false
 
     const vehicle = `${getFieldValue(doc.fields, 'vehicle_plate')} ${getFieldValue(doc.fields, 'vehicle_model')}`.toLowerCase()
     if (appliedFilters.vehicle.trim() && !vehicle.includes(appliedFilters.vehicle.trim().toLowerCase())) return false
