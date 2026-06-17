@@ -81,7 +81,7 @@
 .files-empty { text-align: center; color: #9ca3af; padding: 32px 16px; font-size: 0.875rem; }
 
 /* Прямоугольник 3: нижняя панель */
-.action-bar { background: white; border-top: 1px solid #E5E7EB; box-shadow: 0 -8px 24px rgba(16,24,40,0.06); padding: 24px 32px; border-radius: 20px 20px 0 0; display: flex; align-items: center; justify-content: space-between; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; box-sizing: border-box; }
+.action-bar { background: white; border-top: 1px solid #E5E7EB; box-shadow: 0 -8px 24px rgba(16,24,40,0.06); padding: 24px 32px; border-radius: 20px 20px 0 0; display: flex; align-items: center; justify-content: space-between; position: fixed; bottom: 0; left: 280px; right: 0; z-index: 50; box-sizing: border-box; }
 .btn-cancel { padding: 12px 24px; border: 2px solid #E5E7EB; background: white; color: #101828; border-radius: 12px; font-weight: 600; font-size: 0.938rem; cursor: pointer; transition: all 0.2s; }
 .btn-cancel:hover { border-color: #DC2626; color: #DC2626; }
 .btn-submit { padding: 12px 32px; background: #2563EB; color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 0.938rem; cursor: pointer; transition: background 0.2s; }

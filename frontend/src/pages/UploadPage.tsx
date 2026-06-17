@@ -61,6 +61,7 @@ const UploadPage = () => {
     if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
   };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e);
     if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
     e.target.value = '';
   };
@@ -78,7 +79,6 @@ const UploadPage = () => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
       >
         <div className="upload-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
