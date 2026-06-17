@@ -273,6 +273,24 @@ model DocumentHistory {
   @@map("document_history")
 }
 
+model SystemSettings {
+  id                  Int      @id @default(1)
+  maxFuelDeviation    Int      @default(20) @map("max_fuel_deviation")
+  maxWorkingHours     Int      @default(12) @map("max_working_hours")
+  checkOdometer       Boolean  @default(true) @map("check_odometer")
+  autoDetectAnomalies Boolean  @default(true) @map("auto_detect_anomalies")
+  fields              Json     @default("{}")
+  ocrMode             String   @default("balanced") @map("ocr_mode") @db.VarChar(32)
+  minConfidence       Int      @default(85) @map("min_confidence")
+  autoManualReview    Boolean  @default(true) @map("auto_manual_review")
+  auditLog            Boolean  @default(true) @map("audit_log")
+  dataRetention       Int      @default(36) @map("data_retention")
+  enable2FA           Boolean  @default(true) @map("enable_2fa")
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@map("system_settings")
+}
+
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
   userId     String   @map("user_id") @db.Uuid

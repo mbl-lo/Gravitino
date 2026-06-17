@@ -73,6 +73,15 @@ const ArchivePage = () => {
     window.open(documentsService.getFileUrl(id), '_blank')
   }
 
+  const handleExport = (doc: Document) => {
+    const fmt = exportFormat.toLowerCase()
+    const url = `http://localhost:3000/documents/export?format=${fmt}&search=${encodeURIComponent(doc.documentNumber ?? doc.id)}`
+    const a = window.document.createElement('a')
+    a.href = url
+    a.download = `document-${doc.documentNumber ?? doc.id}.${fmt}`
+    a.click()
+  }
+
   return (
     <div className="archive-page">
       <div className="page-header">
@@ -184,7 +193,7 @@ const ArchivePage = () => {
                         <div className="actions-cell">
                           <button className="action-icon-btn" title="Просмотр карточки" onClick={() => navigate(`/documents/${doc.id}`)}>👁️</button>
                           <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}>📥</button>
-                          <button className="action-icon-btn" title="Экспорт JSON">📄</button>
+                          <button className="action-icon-btn" title={`Экспорт ${exportFormat}`} onClick={() => handleExport(doc)}>📄</button>
                           <button className="action-icon-btn" title="История изменений">🕒</button>
                         </div>
                       </td>
