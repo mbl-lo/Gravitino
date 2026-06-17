@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import EditableField from '../components/EditableField'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import {
+  AimOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileTextOutlined,
+  RightOutlined,
+  SaveOutlined,
+  StarOutlined,
+  WarningOutlined,
+} from '@ant-design/icons'
 import { documentsService, Document, updateDocumentField } from '../services/documents'
 
 const DocumentDetail = () => {
@@ -82,10 +91,10 @@ const DocumentDetail = () => {
 }
 
 const getStatusColor = () => {
-  if (document?.status === 'confirmed') return '#10b981'
-  if (document?.status === 'processing') return '#3b82f6'
-  if (document?.hasAnomalies || document?.status === 'needs_review') return '#ef4444'
-  if (document?.status === 'processed') return '#10b981' // Зеленый для успешной проверки
+  if (document?.status === 'confirmed') return '#16a34a'
+  if (document?.status === 'processing') return '#2563eb'
+  if (document?.hasAnomalies || document?.status === 'needs_review') return '#F59E0B'
+  if (document?.status === 'processed') return '#16a34a' // Зеленый для успешной проверки
   return '#f59e0b'
 }
 
@@ -166,30 +175,39 @@ const getStatusColor = () => {
 
   const v = (key: string) => getFieldValue(key)
   const documentNumber = v('document_number')
+  const calculatedMileage =
+    v('odometer_end') !== '—' && v('odometer_start') !== '—'
+      ? `${parseInt(v('odometer_end')) - parseInt(v('odometer_start'))} км`
+      : '—'
 
   return (
     <div style={styles.container}>
       <div style={styles.breadcrumbs}>
         <Link to="/archive" style={styles.breadcrumbLink}>Архив</Link>
-        <span style={styles.breadcrumbSeparator}>›</span>
+        <RightOutlined style={styles.breadcrumbSeparator} />
         <span style={styles.breadcrumbCurrent}>{documentNumber || 'Документ'}</span>
       </div>
 
       <div style={styles.header}>
         <div style={styles.titleSection}>
           <h1 style={styles.title}>Путевой лист {documentNumber}</h1>
-          <span style={{ ...styles.statusBadge, backgroundColor: getStatusColor() }}>{getStatusText()}</span>
+          <span style={{ ...styles.statusBadge, color: getStatusColor() }}>{getStatusText()}</span>
         </div>
         <div style={styles.actions}>
           <button onClick={handleValidate} disabled={isValidating}
             style={{ ...styles.saveButton, opacity: isValidating ? 0.6 : 1, cursor: isValidating ? 'not-allowed' : 'pointer' }}>
-            {isValidating ? 'Проверка...' : 'Проверить документ'}
+            <SaveOutlined style={styles.buttonIcon} />
+            {isValidating ? 'Сохранение...' : 'Сохранить'}
           </button>
           <button onClick={handleConfirm} disabled={isConfirming}
             style={{ ...styles.confirmButton, opacity: isConfirming ? 0.6 : 1, cursor: isConfirming ? 'not-allowed' : 'pointer' }}>
-            {isConfirming ? 'Сохранение...' : 'Подтвердить'}
+            <CheckCircleOutlined style={styles.buttonIcon} />
+            {isConfirming ? 'Сохранение...' : 'Подтвердить данные'}
           </button>
-          <button onClick={handleExportJson} style={styles.exportButton}>Экспорт JSON</button>
+          <button onClick={handleExportJson} style={styles.exportButton}>
+            <FileTextOutlined style={styles.buttonIcon} />
+            Экспорт JSON
+          </button>
         </div>
       </div>
 
@@ -210,7 +228,7 @@ const getStatusColor = () => {
                 style={styles.documentImage} onError={() => setImageError(true)} />
             ) : (
               <div style={styles.imagePlaceholder}>
-                <span style={styles.imagePlaceholderIcon}>📄</span>
+                <span style={styles.imagePlaceholderIcon}><FileTextOutlined /></span>
                 <p>Нет изображения</p>
                 <a href={documentsService.getFileUrl(document.id)} target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>Скачать файл</a>
               </div>
@@ -219,38 +237,25 @@ const getStatusColor = () => {
         </div>
 
         <div style={styles.rightColumn}>
-          <Section title="Основные данные" fields={[
+          <Section title="Основные данные" titleIcon={<AimOutlined style={styles.sectionTitleIcon} />} fields={[
             ['ID документа', documentNumber, true], ['Дата', 'date'], ['Организация', 'organization'],
             ['Подразделение', 'division'], ['Водитель', 'driver_name'], ['Табельный номер', 'driver_number'],
             ['Автомобиль', 'vehicle_model'], ['Госномер', 'vehicle_plate'],
-            ['Год выпуска', 'year'], ['Маршрут', 'route'],
+            ['Маршрут', 'route'],
           ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
 
           <Section title="Пробег" fields={[
             ['Спидометр при выезде', 'odometer_start'], ['Спидометр при возвращении', 'odometer_end'],
+            ['Расчетный пробег', calculatedMileage, true],
             ['Пробег по маршруту', 'mileage'],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} extra={
-            <div style={styles.infoRow}>
-              <div style={styles.infoLabel}>Расчетный пробег</div>
-              <div style={styles.infoValue}>
-                {v('odometer_end') !== '—' && v('odometer_start') !== '—'
-                  ? `${parseInt(v('odometer_end')) - parseInt(v('odometer_start'))} км` : '—'}
-              </div>
-            </div>
-          } />
+          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
 
           <Section title="Топливо" fields={[
             ['Остаток при выезде', 'fuel_start'], ['Выдано топлива', 'fuel_issued'],
             ['Остаток при возвращении', 'fuel_end'], ['Расчетный расход', 'fuel_consumption'],
             ['Норма расхода', 'fuel_rate'],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} extra={
-            <div style={styles.infoRow}>
-              <div style={styles.infoLabel}>Отклонение</div>
-              <div style={styles.infoValue}>
-                <span style={{ color: v('fuel_deviation').includes('+') ? '#ef4444' : '#10b981' }}>{v('fuel_deviation')}</span>
-              </div>
-            </div>
-          } />
+            ['Отклонение', 'fuel_deviation', true],
+          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
 
           <Section title="Время работы" fields={[
             ['Время выезда', 'departure_time'], ['Время возвращения', 'arrival_time'],
@@ -258,34 +263,63 @@ const getStatusColor = () => {
           ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
 
           <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Подписи и отметки</h2>
+            <h3 style={styles.signatureTitle}>Подписи и отметки</h3>
+            <div style={styles.signatureList}>
+              {[
+                ['Подпись водителя', v('signature_driver'), true],
+                ['Подпись механика', v('signature_mechanic'), true],
+                ['Подпись диспетчера', v('signature_dispatcher'), true],
+                ['Медосмотр пройден', v('medical_check'), false],
+              ].map(([label, val, isDisabled], i) => {
+                const borderColor = val === 'Распознана' ? '#16A34A' : val === 'Не распознана' ? '#DC2626' : '#E5E7EB'
+                return (
+                  <div style={styles.signatureRow} key={i}>
+                    <label style={styles.signatureLabel}>{label}</label>
+                    <input
+                      type="text"
+                      disabled={Boolean(isDisabled)}
+                      value={String(val)}
+                      readOnly
+                      style={{
+                        ...styles.signatureInput,
+                        borderColor,
+                        ...(isDisabled ? styles.signatureInputDisabled : {}),
+                      }}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={styles.validationSection}>
+            <h2 style={styles.sectionTitle}>Проверка данных</h2>
             {[
-              ['Подпись водителя', v('signature_driver')],
-              ['Подпись механика', v('signature_mechanic')],
-              ['Подпись диспетчера', v('signature_dispatcher')],
-              ['Медосмотр пройден', v('medical_check')],
-            ].map(([label, val], i) => (
-              <div style={styles.infoRow} key={i}>
-                <div style={styles.infoLabel}>{label}</div>
-                <div style={styles.infoValue}>{val === 'Распознана' || val === 'Да' ? `✅ ${val}` : `❌ ${val}`}</div>
+              ['success', 'Пробег рассчитан корректно'],
+              ['danger', 'Расход топлива выше нормы на 18%'],
+              ['warning', 'Подпись механика не распознана'],
+              ['success', 'Время возвращения позже времени выезда'],
+            ].map(([type, text], i) => (
+              <div style={styles.validationItem} key={i}>
+                <span style={{
+                  ...styles.validationIcon,
+                  ...(type === 'success' ? styles.successText : type === 'danger' ? styles.dangerText : styles.warningText),
+                }}>
+                  {type === 'success' ? <CheckCircleOutlined /> : type === 'danger' ? <WarningOutlined /> : <ExclamationCircleOutlined />}
+                </span>
+                <span style={{
+                  ...styles.validationText,
+                  ...(type === 'success' ? styles.successText : type === 'danger' ? styles.dangerText : styles.warningText),
+                }}>{text}</span>
               </div>
             ))}
           </div>
 
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Проверка данных</h2>
-            {[
-              ['✅', 'Пробег рассчитан корректно'],
-              ['⚠️', 'Расход топлива выше нормы на 18%'],
-              ['❌', 'Подпись механика не распознана'],
-              ['✅', 'Время возвращения позже времени выезда'],
-            ].map(([icon, text], i) => (
-              <div style={styles.validationItem} key={i}><span>{icon}</span><span>{text}</span></div>
-            ))}
-          </div>
-
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>ИИ-комментарий</h2>
+          <div style={styles.aiCommentSection}>
+            <h3 style={styles.aiCommentTitle}>
+              <StarOutlined style={styles.aiCommentIcon} />
+              ИИ-комментарий
+            </h3>
             <p style={styles.commentText}>Система обнаружила повышенный расход топлива относительно нормы. Рекомендуется проверить маршрут, фактическую заправку и корректность показаний спидометра.</p>
           </div>
         </div>
@@ -294,66 +328,128 @@ const getStatusColor = () => {
   )
 }
 
-const Section = ({ title, fields, doc, onUpdate, v, extra }: {
+const getFieldConfidence = (doc: Document, key: string) => {
+  const confidence = doc.fields?.find(field => field.fieldKey === key)?.confidence
+  if (typeof confidence !== 'number') return null
+  return confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence)
+}
+
+const getFieldBorderColor = (key: string, isStatic?: boolean) => {
+  if (isStatic || ['date', 'organization', 'division', 'driver_name', 'driver_number', 'vehicle_model', 'vehicle_plate', 'route'].includes(key)) return '#E5E7EB'
+  if (['fuel_consumption', 'fuel_deviation'].includes(key)) return '#DC2626'
+  if (['mileage', 'fuel_start', 'fuel_end', 'arrival_time', 'downtime_hours'].includes(key)) return '#F59E0B'
+  if (['odometer_start', 'odometer_end', 'fuel_issued', 'departure_time'].includes(key)) return '#16A34A'
+  return '#E5E7EB'
+}
+
+const Section = ({ title, titleIcon, fields, doc, onUpdate, v }: {
   title: string
+  titleIcon?: React.ReactNode
   fields: [string, string, boolean?][]
   doc: Document
   onUpdate: (key: string, val: string) => void
   v: (key: string) => string
-  extra?: React.ReactNode
 }) => (
-  <div style={styles.section}>
-    <h2 style={styles.sectionTitle}>{title}</h2>
-    <div style={styles.infoGrid}>
-      {fields.map(([label, key, isStatic]) => (
-        <div style={styles.infoRow} key={key}>
-          <div style={styles.infoLabel}>{label}</div>
-          <div style={styles.infoValue}>
-            {isStatic ? key : (
-              <EditableField documentId={doc.id} fieldKey={key} value={v(key)} onUpdate={val => onUpdate(key, val)} />
+  <div style={styles.formSection}>
+    <h3 style={styles.formSectionTitle}>
+      {titleIcon}
+      {title}
+    </h3>
+    <div style={styles.formRows}>
+      {fields.map(([label, key, isStatic]) => {
+        const value = isStatic ? key : v(key)
+        const confidence = !isStatic && title !== 'Основные данные' ? getFieldConfidence(doc, key) : null
+        return (
+          <div key={`${label}-${key}`}>
+            <div style={styles.formRow}>
+              <label style={styles.formLabel}>{label}</label>
+              <input
+                type="text"
+                disabled={Boolean(isStatic)}
+                defaultValue={value}
+                readOnly={Boolean(isStatic)}
+                onBlur={(event) => {
+                  if (!isStatic && event.currentTarget.value !== value) {
+                    onUpdate(key, event.currentTarget.value)
+                  }
+                }}
+                style={{
+                  ...styles.formInput,
+                  borderColor: getFieldBorderColor(key, isStatic),
+                  ...(isStatic ? styles.formInputDisabled : {}),
+                }}
+              />
+            </div>
+            {confidence !== null && (
+              <div style={styles.confidenceText}>Уверенность: {confidence}%</div>
             )}
           </div>
-        </div>
-      ))}
-      {extra}
+        )
+      })}
     </div>
   </div>
 )
 
 const styles = {
   container: { maxWidth: '1400px', margin: '0 auto', padding: '24px' },
-  breadcrumbs: { marginBottom: '16px', fontSize: '14px', color: '#6b7280' },
-  breadcrumbLink: { color: '#3b82f6', textDecoration: 'none' },
-  breadcrumbSeparator: { margin: '0 8px' },
-  breadcrumbCurrent: { color: '#1f2937' },
+  breadcrumbs: { marginBottom: '16px', fontSize: '14px', lineHeight: '20px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' },
+  breadcrumbLink: { color: '#6b7280', textDecoration: 'none' },
+  breadcrumbSeparator: { width: '16px', height: '16px', fontSize: '16px', color: '#6b7280' },
+  breadcrumbCurrent: { color: '#101828', fontWeight: '500' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap' as const, gap: '16px' },
   titleSection: { display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' as const },
-  title: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
-  statusBadge: { padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', color: 'white' },
+  title: { fontSize: '24px', lineHeight: '32px', fontWeight: '700', margin: 0, color: '#101828' },
+  statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 12px', backgroundColor: '#fffbeb', borderRadius: '9999px', fontSize: '14px', lineHeight: '20px', fontWeight: '500' },
   actions: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const },
-  saveButton: { padding: '8px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500' },
-  confirmButton: { padding: '8px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500' },
-  exportButton: { padding: '8px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' },
+  saveButton: { padding: '8px 16px', backgroundColor: 'white', color: '#101828', border: '2px solid #E5E7EB', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'border-color 0.15s ease' },
+  confirmButton: { padding: '8px 16px', backgroundColor: '#16A34A', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background-color 0.15s ease' },
+  exportButton: { padding: '8px 16px', backgroundColor: 'white', color: '#101828', border: '2px solid #E5E7EB', borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'border-color 0.15s ease' },
+  buttonIcon: { fontSize: '16px' },
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280' },
   errorContainer: { textAlign: 'center' as const, padding: '48px' },
   errorText: { color: '#ef4444', marginBottom: '16px' },
+  successText: { color: '#16a34a' },
+  warningText: { color: '#F59E0B' },
+  dangerText: { color: '#DC2626' },
+  errorTextInline: { color: '#ef4444' },
   backButton: { padding: '8px 16px', backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer' },
   twoColumns: { display: 'flex', gap: '32px', flexWrap: 'wrap' as const, alignItems: 'flex-start' },
   leftColumn: { flex: '1.2', minWidth: '300px' },
   rightColumn: { flex: '1', minWidth: '400px', maxWidth: '650px', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' as const, paddingRight: '8px' },
-  imageContainer: { backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', textAlign: 'center' as const, position: 'sticky' as const, top: '24px' },
-  documentImage: { maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' as const, borderRadius: '8px' },
+  imageContainer: { backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', textAlign: 'center' as const, position: 'sticky' as const, top: '24px', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' as const, overscrollBehavior: 'contain' as const },
+  documentImage: { width: '100%', height: 'auto', objectFit: 'contain' as const, borderRadius: '8px', display: 'block' },
   imagePlaceholder: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px', color: '#9ca3af' },
   imagePlaceholderIcon: { fontSize: '64px', marginBottom: '16px' },
   downloadLink: { color: '#3b82f6', textDecoration: 'none', marginTop: '12px' },
   section: { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '20px' },
-  sectionTitle: { fontSize: '18px', fontWeight: '600', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' },
+  formSection: { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '20px' },
+  formSectionTitle: { fontSize: '18px', lineHeight: '28px', fontWeight: '600', color: '#101828', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' },
+  sectionTitleIcon: { fontSize: '20px', color: '#2563EB' },
+  formRows: { display: 'flex', flexDirection: 'column' as const, gap: '12px' },
+  formRow: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', alignItems: 'center' },
+  formLabel: { fontSize: '14px', lineHeight: '20px', color: '#4b5563' },
+  formInput: { gridColumn: 'span 2 / span 2', padding: '8px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', lineHeight: '20px', color: '#101828', backgroundColor: 'white', outline: 'none' },
+  formInputDisabled: { backgroundColor: '#f9fafb' },
+  confidenceText: { fontSize: '12px', lineHeight: '16px', color: '#6b7280', textAlign: 'right' as const, marginTop: '4px' },
+  validationSection: { backgroundColor: '#f9fafb', borderRadius: '20px', padding: '24px', marginBottom: '20px' },
+  aiCommentSection: { backgroundColor: '#eff6ff', border: '2px solid #2563EB', borderRadius: '20px', padding: '24px', marginBottom: '20px' },
+  sectionTitle: { fontSize: '18px', lineHeight: '28px', fontWeight: '600', color: '#101828', margin: '0 0 16px 0' },
+  signatureTitle: { fontSize: '18px', lineHeight: '28px', fontWeight: '600', color: '#101828', margin: '0 0 16px 0' },
+  signatureList: { display: 'flex', flexDirection: 'column' as const, gap: '12px' },
+  signatureRow: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', alignItems: 'center' },
+  signatureLabel: { fontSize: '14px', lineHeight: '20px', color: '#4b5563' },
+  signatureInput: { gridColumn: 'span 2 / span 2', padding: '8px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', lineHeight: '20px', color: '#101828', backgroundColor: 'white', outline: 'none' },
+  signatureInputDisabled: { backgroundColor: '#f9fafb' },
   infoGrid: { display: 'flex', flexDirection: 'column' as const, gap: '12px' },
   infoRow: { display: 'flex', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' as const },
   infoLabel: { width: '180px', fontWeight: '500', color: '#6b7280', flexShrink: 0 },
   infoValue: { flex: 1, color: '#1f2937' },
-  validationItem: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' },
-  commentText: { color: '#4b5563', lineHeight: 1.5, margin: 0 },
+  validationItem: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' },
+  validationIcon: { width: '20px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px', marginTop: '2px' },
+  validationText: { fontSize: '14px', lineHeight: '20px' },
+  aiCommentTitle: { fontSize: '18px', lineHeight: '28px', fontWeight: '600', color: '#101828', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' },
+  aiCommentIcon: { fontSize: '20px', color: '#2563EB' },
+  commentText: { color: '#374151', fontSize: '14px', lineHeight: '20px', margin: 0 },
 }
 
 export default DocumentDetail

@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
-import { SearchOutlined } from '@ant-design/icons';
+import { BellOutlined, SearchOutlined } from '@ant-design/icons'
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
+  const nameParts = user?.fullName?.trim().split(' ').filter(Boolean) ?? []
+  const displayName = nameParts.length >= 2 ? `${nameParts[1]} ${nameParts[0]}` : user?.fullName || 'Оператор Иванов'
+  const initials = nameParts.length >= 2 ? (nameParts[1][0] + nameParts[0][0]).toUpperCase() : nameParts[0]?.[0]?.toUpperCase() || 'ОИ'
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,18 +18,11 @@ const Header = () => {
     console.log('Уведомления')
   }
 
-  const handleLogout = async () => {
-    await logout()
-    navigate('/')
-  }
-
   return (
     <header style={styles.header}>
       <div style={styles.searchSection}>
         <form onSubmit={handleSearch} style={styles.searchForm}>
-          <span style={styles.searchIcon}>
-            <SearchOutlined />
-          </span>
+          <SearchOutlined style={styles.searchIcon} />
           <input
             type="text"
             placeholder="Поиск по документу, водителю, автомобилю"
@@ -41,38 +35,20 @@ const Header = () => {
 
       <div style={styles.rightSection}>
         <button onClick={handleNotifications} style={styles.notificationButton}>
-          <span style={styles.notificationIcon}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="lucide lucide-bell w-5 h-5 text-gray-600"
-            >
-              <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
-              <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
-            </svg>
-          </span>
-          <span style={styles.notificationBadge}>3</span>
+          <BellOutlined style={styles.notificationIcon} />
+          <span style={styles.notificationBadge} />
         </button>
 
-        <div style={styles.avatar}>
-          <span style={styles.avatarText}>{user?.fullName ? (() => { const p = user.fullName.trim().split(' '); return p.length >= 2 ? (p[1][0] + p[0][0]).toUpperCase() : p[0][0].toUpperCase(); })() : 'ОИ'}</span>
-        </div>
+        <div style={styles.profileSection}>
+          <div style={styles.avatar}>
+            <span style={styles.avatarText}>{initials}</span>
+          </div>
 
-        <div style={styles.userInfo}>
-          <span style={styles.userName}>{user?.fullName ? (() => { const p = user.fullName.trim().split(' '); return p.length >= 2 ? `${p[1]} ${p[0]}` : user.fullName; })() : 'Оператор'}</span>
-          <span style={styles.userStatus}>Активен</span>
+          <div style={styles.userInfo}>
+            <span style={styles.userName}>{displayName}</span>
+            <span style={styles.userStatus}>Активен</span>
+          </div>
         </div>
-
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Выйти
-        </button>
       </div>
     </header>
   )
@@ -95,31 +71,36 @@ const styles = {
   },
   searchSection: {
     flex: 1,
-    maxWidth: '500px',
+    maxWidth: '576px',
   },
   searchForm: {
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '8px 12px',
+    position: 'relative' as const,
   },
   searchIcon: {
+    position: 'absolute' as const,
+    left: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '20px',
+    height: '20px',
+    fontSize: '20px',
     color: '#9ca3af',
-    marginRight: '8px',
   },
   searchInput: {
-    border: 'none',
-    outline: 'none',
-    backgroundColor: 'transparent',
     width: '100%',
-    fontSize: '0.875rem',
+    padding: '8px 16px 8px 40px',
+    border: '1px solid #E5E7EB',
+    borderRadius: '12px',
+    outline: 'none',
+    backgroundColor: 'white',
+    fontSize: '14px',
+    lineHeight: '20px',
+    color: '#101828',
   },
   rightSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '20px',
+    gap: '16px',
   },
   notificationButton: {
     position: 'relative' as const,
@@ -131,40 +112,44 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    transition: 'background-color 0.15s ease',
   },
   notificationIcon: {
-    fontSize: '1.25rem',
-    color: '#6b7280',
+    width: '20px',
+    height: '20px',
+    fontSize: '20px',
+    color: '#4b5563',
   },
   notificationBadge: {
     position: 'absolute' as const,
-    top: '0px',
-    right: '0px',
+    top: '4px',
+    right: '4px',
     backgroundColor: '#ef4444',
-    color: 'white',
-    fontSize: '0.625rem',
-    fontWeight: 'bold',
     borderRadius: '50%',
-    width: '16px',
-    height: '16px',
+    width: '8px',
+    height: '8px',
+  },
+  profileSection: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: '12px',
+    paddingLeft: '16px',
+    borderLeft: '1px solid #E5E7EB',
   },
   avatar: {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#2563EB',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'pointer',
   },
   avatarText: {
     color: 'white',
-    fontSize: '0.875rem',
-    fontWeight: '500',
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: '600',
   },
   userInfo: {
     display: 'flex',
@@ -173,23 +158,16 @@ const styles = {
   },
   userName: {
     display: 'block',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: '#1f2937',
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: '600',
+    color: '#101828',
   },
   userStatus: {
     display: 'block',
-    fontSize: '0.75rem',
-    color: '#10b981',
-  },
-  logoutButton: {
-    padding: '6px 12px',
-    backgroundColor: '#ef4444',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '0.75rem',
+    fontSize: '12px',
+    lineHeight: '16px',
+    color: '#6b7280',
   },
 }
 

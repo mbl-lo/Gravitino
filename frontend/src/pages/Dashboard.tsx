@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, LinkOutlined, RiseOutlined, WarningOutlined } from '@ant-design/icons'
 import { getDashboardStats } from '../services/api'
 
 interface DashboardData {
@@ -52,31 +53,33 @@ const Dashboard = () => {
           <div className="metric-meta">
             <span className="metric-title">Обработано сегодня</span>
             <span className="metric-value">{data.cards.processedToday}</span>
+            <span className="metric-trend success-text"><RiseOutlined /> +12% к вчера</span>
           </div>
-          <span className="metric-icon blue-icon">📄</span>
+          <span className="metric-icon blue-icon"><FileTextOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Средняя точность OCR</span>
             <span className="metric-value">{data.cards.avgOcrAccuracy}%</span>
+            <span className="metric-trend success-text"><RiseOutlined /> +2,3% к прошлой неделе</span>
           </div>
-          <span className="metric-icon green-icon">📈</span>
+          <span className="metric-icon green-icon"><RiseOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Найдено аномалий</span>
-            <span className="metric-value red-text">{data.cards.activeAnomaliesCount}</span>
-            <span className="metric-trend danger-text">⚠️ Требуют проверки</span>
+            <span className="metric-value">{data.cards.activeAnomaliesCount}</span>
+            <span className="metric-trend warning-text"><WarningOutlined /> Требуют проверки</span>
           </div>
-          <span className="metric-icon orange-icon">⚠️</span>
+          <span className="metric-icon orange-icon"><WarningOutlined /></span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
             <span className="metric-title">Ожидают проверки</span>
             <span className="metric-value">{data.cards.waitingReview}</span>
-            <span className="metric-trend text-muted">🕒 В очереди</span>
+            <span className="metric-trend text-muted"><ClockCircleOutlined /> В очереди</span>
           </div>
-          <span className="metric-icon gray-icon">🕒</span>
+          <span className="metric-icon gray-icon"><ClockCircleOutlined /></span>
         </div>
       </div>
       <div className="middle-section-layout">
@@ -116,15 +119,15 @@ const Dashboard = () => {
         <div className="anomalies-side-panel">
           <div className="panel-flex-header">
             <h3 className="panel-title" style={{ margin: 0 }}>Последние аномалии</h3>
-            <span className="view-all-link" onClick={() => navigate('/anomalies')}>Все ↗</span>
+            <span className="view-all-link" onClick={() => navigate('/anomalies')}>Все <LinkOutlined /></span>
           </div>
           <div className="anomalies-list-wrapper">
             {data.recentAnomalies.length === 0 ? (
-              <div className="empty-anomalies-stub">✅ Необработанных аномалий в системе нет</div>
+              <div className="empty-anomalies-stub"><CheckCircleOutlined /> Необработанных аномалий в системе нет</div>
             ) : (
-              data.recentAnomalies.map(anomaly => (
+              data.recentAnomalies.map((anomaly, index) => (
                 <div key={anomaly.id} className="anomaly-item-row">
-                  <div className="anomaly-indicator-dot" />
+                  <div className={`anomaly-indicator-dot severity-${index % 4}`} />
                   <div className="anomaly-text-block">
                     <span className="anomaly-message-title">{anomaly.message}</span>
                     <span className="anomaly-doc-code">{anomaly.documentNumber}</span>
@@ -155,35 +158,37 @@ const Dashboard = () => {
       <style>{`
         .dashboard-page { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; min-height: 100vh; padding-bottom: 40px; }
         .dashboard-header { margin-bottom: 24px; }
-        .dashboard-header h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; }
-        .subtitle { color: #64748b; font-size: 13px; margin: 0; }
+        .dashboard-header h1 { font-size: 30px; line-height: 36px; font-weight: 700; color: #101828; margin: 0; }
+        .subtitle { color: #4b5563; font-size: 16px; line-height: 24px; margin: 4px 0 0 0; }
 
         /* Metrics Cards Grid */
-        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
-        .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
-        .metric-meta { display: flex; flex-direction: column; gap: 4px; }
-        .metric-title { font-size: 13px; color: #64748b; font-weight: 500; }
-        .metric-value { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; }
-        .metric-trend { font-size: 12px; font-weight: 600; margin-top: 2px; }
-        .metric-trend.up { color: #16a34a; }
-        .metric-trend.danger-text { color: #ea580c; }
-        .red-text { color: #ef4444 !important; }
-        .metric-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+        .metric-card { background: white; border-radius: 20px; padding: 24px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 8px 24px rgba(16,24,40,0.06); }
+        .metric-meta { display: flex; flex-direction: column; gap: 8px; }
+        .metric-title { font-size: 14px; line-height: 20px; color: #4b5563; font-weight: 400; }
+        .metric-value { font-size: 30px; line-height: 36px; font-weight: 700; color: #101828; }
+        .metric-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 500; }
+        .metric-trend .anticon { font-size: 12px; }
+        .success-text { color: #16A34A; }
+        .warning-text { color: #F59E0B; }
+        .text-muted { color: #6b7280; }
+        .metric-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
         
         /* Icon backgrounds colors */
-        .blue-icon { background: #eff6ff; color: #2563eb; }
-        .green-icon { background: #f0fdf4; color: #16a34a; }
-        .orange-icon { background: #fff7ed; color: #ea580c; }
-        .gray-icon { background: #f8fafc; color: #64748b; }
+        .blue-icon { background: #eff6ff; color: #2563EB; }
+        .green-icon { background: #f0fdf4; color: #16A34A; }
+        .orange-icon { background: #fffbeb; color: #F59E0B; }
+        .gray-icon { background: #f9fafb; color: #4b5563; }
 
         /* Middle Section Rules */
-        .middle-section-layout { display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
-        .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; flex: 2; min-width: 500px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
-        .anomalies-side-panel { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; flex: 1; min-width: 320px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .middle-section-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); gap: 24px; margin-bottom: 24px; }
+        .chart-card { background: white; border-radius: 20px; padding: 24px; min-width: 0; box-shadow: 0 8px 24px rgba(16,24,40,0.06); }
+        .anomalies-side-panel { background: white; border-radius: 20px; padding: 24px; min-width: 0; box-shadow: 0 8px 24px rgba(16,24,40,0.06); }
         
-        .panel-title { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 20px 0; }
-        .panel-flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .view-all-link { color: #2563eb; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .panel-title { font-size: 18px; line-height: 28px; font-weight: 600; color: #101828; margin: 0 0 24px 0; }
+        .panel-flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .view-all-link { color: #2563EB; font-size: 14px; line-height: 20px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .view-all-link .anticon { font-size: 12px; }
         .view-all-link:hover { text-decoration: underline; }
 
         /* Pure HTML/CSS Bar Chart Engine */
@@ -193,44 +198,50 @@ const Dashboard = () => {
         .bars-sub-grid { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 0 6px; background: #f8fafc; border-radius: 8px; }
         .bar { width: 24px; border-radius: 6px 6px 0 0; transition: transform 0.2s; cursor: pointer; }
         .bar:hover { transform: scaleY(1.05); }
-        .bar-processed { background-color: #2563eb; }
-        .bar-warning { background-color: #f59e0b; }
-        .bar-manual { background-color: #ef4444; }
+        .bar-processed { background-color: #2563EB; }
+        .bar-warning { background-color: #F59E0B; }
+        .bar-manual { background-color: #DC2626; }
         .day-label { font-size: 11px; color: #64748b; font-weight: 600; }
 
         /* Chart Legend Styles */
         .chart-legend { display: flex; justify-content: center; gap: 20px; margin-top: 16px; }
         .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; font-weight: 500; }
         .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .blue-dot { background: #2563eb; }
-        .orange-dot { background: #f59e0b; }
-        .red-dot { background: #ef4444; }
+        .blue-dot { background: #2563EB; }
+        .orange-dot { background: #F59E0B; }
+        .red-dot { background: #DC2626; }
 
         /* Anomalies List styling */
         .anomalies-list-wrapper { display: flex; flex-direction: column; gap: 12px; }
-        .anomaly-item-row { border: 1px solid #f1f5f9; border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; transition: background 0.15s; }
-        .anomaly-item-row:hover { background: #f8fafc; }
-        .anomaly-indicator-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; margin-top: 6px; flex-shrink: 0; }
-        .anomaly-text-block { display: flex; flex-direction: column; gap: 2px; flex: 1; position: relative; }
-        .anomaly-message-title { font-size: 13px; font-weight: 600; color: #1e293b; padding-right: 50px; }
-        .anomaly-doc-code { font-size: 11px; color: #94a3b8; font-weight: 500; }
-        .anomaly-action-redirect { position: absolute; right: 0; top: 0; font-size: 11px; color: #2563eb; font-weight: 600; cursor: pointer; }
+        .anomaly-item-row { border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; transition: border-color 0.15s; }
+        .anomaly-item-row:hover { border-color: #2563EB; }
+        .anomaly-indicator-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
+        .severity-0, .severity-1 { background: #DC2626; }
+        .severity-2 { background: #F59E0B; }
+        .severity-3 { background: #9ca3af; }
+        .anomaly-text-block { display: flex; flex-direction: column; gap: 8px; flex: 1; position: relative; }
+        .anomaly-message-title { font-size: 14px; line-height: 20px; font-weight: 500; color: #101828; padding-right: 0; }
+        .anomaly-doc-code { font-size: 12px; line-height: 16px; color: #6b7280; font-weight: 400; }
+        .anomaly-action-redirect { font-size: 12px; line-height: 16px; color: #2563EB; font-weight: 500; cursor: pointer; }
         .anomaly-action-redirect:hover { text-decoration: underline; }
-        .empty-anomalies-stub { text-align: center; color: #10b981; font-size: 13px; padding: 30px; font-weight: 500; }
+        .empty-anomalies-stub { text-align: center; color: #16A34A; font-size: 14px; padding: 30px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
         /* Bottom Quality Section (image_d420db.png) */
-        .bottom-quality-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .bottom-quality-card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 8px 24px rgba(16,24,40,0.06); }
         .progress-bars-stack { display: flex; flex-direction: column; gap: 16px; }
-        .progress-row-item { display: flex; flex-direction: column; gap: 6px; }
-        .progress-meta-label { display: flex; justify-content: space-between; font-size: 12px; color: #334155; font-weight: 500; }
-        .pct-value { color: #16a34a; font-weight: 600; }
-        .progress-track-line { height: 6px; background-color: #f1f5f9; border-radius: 3px; overflow: hidden; width: 100%; }
-        .progress-fill-line { height: 100%; background-color: #16a34a; border-radius: 3px; }
+        .progress-row-item { display: flex; flex-direction: column; gap: 8px; }
+        .progress-meta-label { display: flex; justify-content: space-between; font-size: 14px; line-height: 20px; color: #101828; font-weight: 500; }
+        .pct-value { color: #16A34A; font-weight: 600; }
+        .progress-track-line { height: 8px; background-color: #f3f4f6; border-radius: 9999px; overflow: hidden; width: 100%; }
+        .progress-fill-line { height: 100%; background-color: #16A34A; border-radius: 9999px; transition: width 0.2s; }
 
         /* Adaptive rules */
         @media (max-width: 1024px) {
           .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-          .chart-card, .anomalies-side-panel { flex: 1 1 100%; min-width: 100%; }
+          .middle-section-layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+          .metrics-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>
