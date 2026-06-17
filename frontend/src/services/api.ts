@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://26.168.132.196:3000',  // Прокси на localhost:3000
+  baseURL: 'http://localhost:3000',  // Прокси на localhost:3000
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
