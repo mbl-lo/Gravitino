@@ -288,13 +288,10 @@ export default function UsersPage() {
                     {formatLastActivity(user.lastLoginAt)}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', position: 'relative' }}>
+                  {currentUser?.role === 'admin' && (
+                    <>
                     <button
                       onClick={(e) => {
-                        if (currentUser?.role !== 'admin') {
-                          setError('Только администратор может управлять пользователями');
-                          setTimeout(() => setError(''), 3000);
-                          return;
-                        }
                         e.stopPropagation();
                         setMenuOpenId(menuOpenId === user.id ? null : user.id);
                       }}
@@ -302,16 +299,21 @@ export default function UsersPage() {
                     {menuOpenId === user.id && (
                       <div style={{ position: 'absolute', right: '1rem', top: '3rem', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 50, minWidth: '160px' }}>
                         {[
-                          { label: 'Редактировать', action: () => { setEditUser(user); setEditForm({ fullName: user.fullName, email: user.email, role: user.role }); setMenuOpenId(null); } },
-                          { label: user.isActive ? 'Деактивировать' : 'Активировать', action: () => handleDeactivate(user.id) },
-                          { label: 'Удалить', action: () => handleDelete(user.id), danger: true },
-                        ].map((item) => (
+                          { label: 'Редактировать', action: () => { setEditUser(user); setEditForm({ fullName: user.fullName, email: user.email, role: user.role }); setMenuOpenId(null); }, show: true },
+                          { label: user.isActive ? 'Деактивировать' : 'Активировать', action: () => handleDeactivate(user.id), show: currentUser.id !== user.id && user.email !== 'admin@gravitino.local'
+                           },
+                          { label: 'Удалить', action: () => handleDelete(user.id), danger: true, show: currentUser.id !== user.id && user.email !== 'admin@gravitino.local' },
+                        ]
+                        .filter((item) => item.show)
+                        .map((item) => (
                           <button key={item.label} onClick={item.action} style={{ display: 'block', width: '100%', padding: '0.625rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', color: (item as any).danger ? '#dc2626' : '#111827' }}>
                             {item.label}
                           </button>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                          </div>
+                          )}
+                        </>
+                      )}
                   </td>
                 </tr>
               ))}
