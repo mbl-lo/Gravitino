@@ -23,7 +23,8 @@ const Layout = ({ children }: LayoutProps) => {
 const styles = {
   container: {
     display: 'flex',
-    minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',
     backgroundColor: '#f9fafb',
   },
   main: {
@@ -31,9 +32,13 @@ const styles = {
     marginLeft: '280px',
     marginTop: '70px',
     padding: '24px',
+    height: 'calc(100vh - 70px)',
+    overflow: 'auto',
+    boxSizing: 'border-box' as const,
   },
   content: {
     width: '100%',
+    height: '100%',
   },
 }
 

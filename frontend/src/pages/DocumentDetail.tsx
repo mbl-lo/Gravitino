@@ -391,7 +391,7 @@ const Section = ({ title, titleIcon, fields, doc, onUpdate, v }: {
 )
 
 const styles = {
-  container: { maxWidth: '1400px', margin: '0 auto', padding: '24px' },
+  container: { padding: '24px', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' as const, boxSizing: 'border-box' as const },
   breadcrumbs: { marginBottom: '16px', fontSize: '14px', lineHeight: '20px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' },
   breadcrumbLink: { color: '#6b7280', textDecoration: 'none' },
   breadcrumbSeparator: { width: '16px', height: '16px', fontSize: '16px', color: '#6b7280' },
@@ -413,10 +413,10 @@ const styles = {
   dangerText: { color: '#DC2626' },
   errorTextInline: { color: '#ef4444' },
   backButton: { padding: '8px 16px', backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer' },
-  twoColumns: { display: 'flex', gap: '32px', flexWrap: 'wrap' as const, alignItems: 'flex-start' },
-  leftColumn: { flex: '1.2', minWidth: '300px' },
-  rightColumn: { flex: '1', minWidth: '400px', maxWidth: '650px', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' as const, paddingRight: '8px' },
-  imageContainer: { backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', textAlign: 'center' as const, position: 'sticky' as const, top: '24px', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' as const, overscrollBehavior: 'contain' as const },
+  twoColumns: { display: 'flex', gap: '32px', flex: 1, minHeight: 0, overflow: 'hidden' },
+  leftColumn: { flex: '1', minWidth: '300px', overflowY: 'auto' as const, height: '100%' },
+  rightColumn: { flex: '1', minWidth: '300px', overflowY: 'auto' as const, height: '100%', paddingRight: '8px' },
+  imageContainer: { backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', textAlign: 'center' as const },
   documentImage: { width: '100%', height: 'auto', objectFit: 'contain' as const, borderRadius: '8px', display: 'block' },
   imagePlaceholder: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px', color: '#9ca3af' },
   imagePlaceholderIcon: { fontSize: '64px', marginBottom: '16px' },
