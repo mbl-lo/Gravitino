@@ -14,6 +14,8 @@ interface BackendAnomaly {
   detectedAt?: string;
   expectedValue?: string;
   actualValue?: string;
+  rule?: string;
+  recommendedAction?: string | null;
 }
 
 const SEVERITY_MAP: Record<string, string> = {
@@ -30,20 +32,44 @@ const SEVERITY_TEXT: Record<string, string> = {
   low: 'Низкая',
 };
 
+const SeverityIcon = ({ severity }: { severity: string }) => {
+  if (severity === 'critical' || severity === 'high') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </svg>
+    );
+  }
+  if (severity === 'medium') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" x2="12" y1="8" y2="12" />
+        <line x1="12" x2="12.01" y1="16" y2="16" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  );
+};
+
 const STATUS_MAP: Record<string, string> = {
   open: 'status-open',
+  review: 'status-review',
   fixed: 'status-fixed',
-  hidden: 'status-hidden',
-  incorrect: 'status-incorrect',
-  insufficient: 'status-insufficient',
 };
 
 const STATUS_TEXT: Record<string, string> = {
   open: 'Открыто',
+  review: 'На проверке',
   fixed: 'Исправлено',
-  hidden: 'Скрыто',
-  incorrect: 'Неправильные',
-  insufficient: 'Недостаточные',
 };
 
 const AnomaliesPage = () => {
@@ -53,6 +79,8 @@ const AnomaliesPage = () => {
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterDate, setFilterDate] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const fetchRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const fetchAnomalies = useCallback(async () => {
@@ -70,33 +98,25 @@ const AnomaliesPage = () => {
   useEffect(() => { fetchRef.current(); }, []);
 
   // Получаем уникальные типы аномалий для фильтра
-  const uniqueTypes = [...new Set(anomalies.map(a => a.type))];
-
   const filtered = anomalies.filter(a => {
     if (filterSeverity !== 'all' && a.severity !== filterSeverity) return false;
     if (filterType !== 'all' && a.type !== filterType) return false;
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
+    if (filterDate && a.detectedAt?.slice(0, 10) !== filterDate) return false;
     return true;
   });
 
+  const selectedAnomaly = anomalies.find(a => a.id === selectedId) || null;
+
   // Подсчет статистики (только для активных аномалий)
   const stats = {
-    hight: anomalies.filter(a => a.severity === 'high' && a.status !== 'fixed').length,
     critical: anomalies.filter(a => a.severity === 'critical' && a.status !== 'fixed').length,
     medium: anomalies.filter(a => a.severity === 'medium' && a.status !== 'fixed').length,
     low: anomalies.filter(a => a.severity === 'low'  && a.status !== 'fixed').length,
     fixed: anomalies.filter(a => a.status === 'fixed').length,
-    hidden: anomalies.filter(a => a.status === 'hidden').length,
-    incorrect: anomalies.filter(a => a.status === 'incorrect').length,
-    insufficient: anomalies.filter(a => a.status === 'insufficient').length,
   };
 
   const openDocument = (documentId: string) => navigate(`/documents/${documentId}`);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '—';
-    return dateString;
-  };
 
   if (isLoading) {
     return (
@@ -112,52 +132,63 @@ const AnomaliesPage = () => {
       <div className="page-header">
         <div className="container">
           <h1>Аномалии и ошибки</h1>
-          <p className="subtitle">Автоматическое выявление логических несоответствий в путевых листах</p>
+          <p style={{ margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' }}>Автоматическое выявление логических несоответствий в путевых листах</p>
         </div>
       </div>
 
       <div className="container">
         {/* Статистика */}
         <div className="stats-grid">
-        <div className="stat-card">
-            <div className="stat-dot high"></div>
-            <div className="stat-value">{stats.hight}</div>
-            <div className="stat-label">Высокие</div>
+          <div className="stat-card">
+            <div className="stat-meta">
+              <div className="stat-value stat-value-critical">{stats.critical}</div>
+              <div className="stat-label">Критические</div>
+            </div>
+            <span className="stat-icon stat-icon-critical">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </span>
           </div>
           <div className="stat-card">
-            <div className="stat-dot critical"></div>
-            <div className="stat-value">{stats.critical}</div>
-            <div className="stat-label">Критические</div>
+            <div className="stat-meta">
+              <div className="stat-value stat-value-medium">{stats.medium}</div>
+              <div className="stat-label">Средние</div>
+            </div>
+            <span className="stat-icon stat-icon-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" x2="12" y1="8" y2="12" />
+                <line x1="12" x2="12.01" y1="16" y2="16" />
+              </svg>
+            </span>
           </div>
           <div className="stat-card">
-            <div className="stat-dot medium"></div>
-            <div className="stat-value">{stats.medium}</div>
-            <div className="stat-label">Средние</div>
+            <div className="stat-meta">
+              <div className="stat-value stat-value-low">{stats.low}</div>
+              <div className="stat-label">Низкие</div>
+            </div>
+            <span className="stat-icon stat-icon-low">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+            </span>
           </div>
           <div className="stat-card">
-            <div className="stat-dot low"></div>
-            <div className="stat-value">{stats.low}</div>
-            <div className="stat-label">Низкие</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-dot fixed-dot"></div>
-            <div className="stat-value">{stats.fixed}</div>
-            <div className="stat-label">Исправлены</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-dot hidden-dot"></div>
-            <div className="stat-value">{stats.hidden}</div>
-            <div className="stat-label">Скрытые</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-dot incorrect"></div>
-            <div className="stat-value">{stats.incorrect}</div>
-            <div className="stat-label">Неправильные</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-dot insufficient"></div>
-            <div className="stat-value">{stats.insufficient}</div>
-            <div className="stat-label">Недостаточные</div>
+            <div className="stat-meta">
+              <div className="stat-value stat-value-fixed">{stats.fixed}</div>
+              <div className="stat-label">Исправлены</div>
+            </div>
+            <span className="stat-icon stat-icon-fixed">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.801 10A10 10 0 1 1 17 3.335" />
+                <path d="m9 11 3 3L22 4" />
+              </svg>
+            </span>
           </div>
         </div>
 
@@ -168,43 +199,37 @@ const AnomaliesPage = () => {
             <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)}>
               <option value="all">Все</option>
               <option value="critical">Критические</option>
-              <option value="high">Высокие</option>
               <option value="medium">Средние</option>
               <option value="low">Низкие</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Тип аномалии</label>
             <select value={filterType} onChange={e => setFilterType(e.target.value)}>
               <option value="all">Все типы</option>
-              {uniqueTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
+              <option value="Несоответствие пробега">Несоответствие пробега</option>
+              <option value="Расход топлива выше нормы">Расход топлива</option>
+              <option value="Отсутствует подпись">Отсутствие подписи</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Статус</label>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option value="all">Все</option>
               <option value="open">Открыто</option>
+              <option value="review">На проверке</option>
               <option value="fixed">Исправлено</option>
-              <option value="hidden">Скрыто</option>
-              <option value="incorrect">Неправильные</option>
-              <option value="insufficient">Недостаточные</option>
             </select>
           </div>
           
           <div className="filter-group">
             <label>Дата</label>
-            <input type="text" placeholder="ДД.ММ.ГГГГ" disabled />
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
           </div>
-        </div>
 
-        {/* Результаты */}
-        <div className="results-header">
-          <span>Найдено аномалий: <strong>{filtered.length}</strong></span>
+          <button className="apply-btn" onClick={() => fetchRef.current()}>Применить</button>
         </div>
 
         {/* Таблица */}
@@ -213,55 +238,109 @@ const AnomaliesPage = () => {
             <p>Аномалий не найдено по выбранным фильтрам</p>
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table className="anomalies-table">
-              <thead>
-                <tr>
-                  <th>Документ</th>
-                  <th>Тип аномалии</th>
-                  <th>Поле</th>
-                  <th>Серьезность</th>
-                  <th>Статус</th>
-                  <th>Дата</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(anomaly => (
-                  <tr key={anomaly.id} onClick={() => openDocument(anomaly.documentId)}>
-                    <td>
-                      <button className="document-link">
-                        {anomaly.documentNumber}
-                      </button>
-                    </td>
-                    <td>{anomaly.type}</td>
-                    <td>{anomaly.fieldLabel}</td>
-                    <td>
-                      <span className={`severity-badge ${SEVERITY_MAP[anomaly.severity] || 'severity-medium'}`}>
-                        {SEVERITY_TEXT[anomaly.severity] || anomaly.severity}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${STATUS_MAP[anomaly.status] || 'status-open'}`}>
-                        {STATUS_TEXT[anomaly.status] || anomaly.status}
-                      </span>
-                    </td>
-                    <td>{formatDate(anomaly.detectedAt)}</td>
-                    <td>
-                      <button 
-                        className="view-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDocument(anomaly.documentId);
-                        }}
-                      >
-                        Открыть
-                      </button>
-                    </td>
+          <div className="results-layout">
+            <div className="table-wrapper">
+              <table className="anomalies-table">
+                <thead>
+                  <tr>
+                    <th>Документ</th>
+                    <th>Тип аномалии</th>
+                    <th>Поле</th>
+                    <th>Серьезность</th>
+                    <th>Статус</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map(anomaly => (
+                    <tr
+                      key={anomaly.id}
+                      className={anomaly.id === selectedId ? 'row-selected' : ''}
+                      onClick={() => setSelectedId(anomaly.id)}
+                    >
+                      <td>
+                        <button
+                          className="document-link"
+                          onClick={(e) => { e.stopPropagation(); openDocument(anomaly.documentId); }}
+                        >
+                          {anomaly.documentNumber}
+                        </button>
+                      </td>
+                      <td>{anomaly.type}</td>
+                      <td>{anomaly.fieldLabel}</td>
+                      <td>
+                        <span className={`severity-badge ${SEVERITY_MAP[anomaly.severity] || 'severity-medium'}`}>
+                          <SeverityIcon severity={anomaly.severity} />
+                          {SEVERITY_TEXT[anomaly.severity] || anomaly.severity}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${STATUS_MAP[anomaly.status] || 'status-open'}`}>
+                          {STATUS_TEXT[anomaly.status] || anomaly.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="detail-panel">
+              {!selectedAnomaly ? (
+                <p className="detail-empty">Выберите аномалию из списка, чтобы увидеть детали</p>
+              ) : (
+                <>
+                  <h3 className="detail-title">Детали аномалии</h3>
+
+                  <div className="detail-field">
+                    <span className="detail-label">Документ</span>
+                    <button className="detail-doc-link" onClick={() => openDocument(selectedAnomaly.documentId)}>
+                      {selectedAnomaly.documentNumber}
+                    </button>
+                  </div>
+
+                  <div className="detail-field">
+                    <span className="detail-label">Тип аномалии</span>
+                    <strong>{selectedAnomaly.type}</strong>
+                  </div>
+
+                  {selectedAnomaly.rule && (
+                    <div className="detail-field">
+                      <span className="detail-label">Правило</span>
+                      <span>{selectedAnomaly.rule}</span>
+                    </div>
+                  )}
+
+                  {selectedAnomaly.actualValue && (
+                    <div className="detail-box detail-box-danger">
+                      <span className="detail-label">Обнаружено</span>
+                      <strong>{selectedAnomaly.actualValue}</strong>
+                    </div>
+                  )}
+
+                  {selectedAnomaly.expectedValue && (
+                    <div className="detail-box detail-box-success">
+                      <span className="detail-label">Ожидается</span>
+                      <strong>{selectedAnomaly.expectedValue}</strong>
+                    </div>
+                  )}
+
+                  {selectedAnomaly.recommendedAction && (
+                    <div className="detail-field">
+                      <span className="detail-label">Рекомендуемое действие</span>
+                      <span>{selectedAnomaly.recommendedAction}</span>
+                    </div>
+                  )}
+
+                  <div className="detail-actions">
+                    <button className="detail-btn detail-btn-primary" onClick={() => openDocument(selectedAnomaly.documentId)}>
+                      Открыть документ
+                    </button>
+                    <button className="detail-btn detail-btn-success">Пометить как исправлено</button>
+                    <button className="detail-btn detail-btn-outline">Отклонить</button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -273,51 +352,49 @@ const AnomaliesPage = () => {
           max-width: none !important;
           flex-shrink: 0 !important;
           background-color: #f8fafc;
+          padding-top: 8px;
+          padding-bottom: 32px;
+          box-sizing: border-box;
         }
 
         .container {
           margin: 0 auto;
           width: 100% !important;
           max-width: none !important;
-          padding: 0 32px;
+          padding: 0 8px;
           box-sizing: border-box;
         }
 
         /* Header */
         .page-header {
-          background: white;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 24px 0;
-          margin-bottom: 28px;
+          margin-bottom: 24px;
         }
 
         .page-header h1 {
-          font-size: 26px;
+          font-size: 30px;
+          line-height: 1.25;
           font-weight: 700;
-          color: #0f172a;
-          margin: 0 0 8px 0;
-        }
-
-        .subtitle {
-          color: #64748b;
-          font-size: 14px;
+          letter-spacing: -0.02em;
+          color: #101828;
           margin: 0;
         }
 
         /* Stats Grid */
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(8, 1fr);
-          gap: 12px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
           margin-bottom: 28px;
         }
 
         .stat-card {
           background: white;
-          border-radius: 12px;
+          border-radius: 16px;
           border: 1px solid #e2e8f0;
-          padding: 14px 12px;
-          text-align: center;
+          padding: 20px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
           transition: all 0.2s;
         }
 
@@ -326,34 +403,40 @@ const AnomaliesPage = () => {
           transform: translateY(-1px);
         }
 
-        .stat-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          margin: 0 auto 6px;
-        }
-
-        .stat-dot.high { background-color: #d40000; }
-        .stat-dot.critical { background-color: #ef4444; }
-        .stat-dot.medium { background-color: #f59e0b; }
-        .stat-dot.low { background-color: #3b82f6; }
-        .stat-dot.fixed-dot { background-color: #10b981; }
-        .stat-dot.hidden-dot { background-color: #8b5cf6; }
-        .stat-dot.incorrect { background-color: #f97316; }
-        .stat-dot.insufficient { background-color: #64748b; }
-
         .stat-value {
-          font-size: 26px;
+          font-size: 30px;
           font-weight: 700;
           color: #0f172a;
           line-height: 1.2;
         }
 
         .stat-label {
-          font-size: 11px;
+          font-size: 13px;
           color: #64748b;
           margin-top: 4px;
         }
+
+        .stat-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
+        .stat-value-critical { color: #dc2626; }
+        .stat-value-medium { color: #f59e0b; }
+        .stat-value-low { color: #4b5563; }
+        .stat-value-fixed { color: #16a34a; }
+
+        .stat-icon-critical { background: #fef2f2; color: #dc2626; }
+        .stat-icon-medium { background: #fffbeb; color: #d97706; }
+        .stat-icon-low { background: #f3f4f6; color: #4b5563; }
+        .stat-icon-fixed { background: #ecfdf5; color: #16a34a; }
 
         /* Filters */
         .filters-bar {
@@ -405,16 +488,144 @@ const AnomaliesPage = () => {
           cursor: not-allowed;
         }
 
-        /* Results header */
-        .results-header {
-          margin-bottom: 16px;
+        .apply-btn {
+          align-self: flex-end;
+          padding: 9px 20px;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 8px;
           font-size: 13px;
-          color: #475569;
+          font-weight: 600;
+          cursor: pointer;
         }
 
-        .results-header strong {
+        .apply-btn:hover {
+          background: #1d4ed8;
+        }
+
+        /* Results layout: table + detail panel */
+        .results-layout {
+          display: flex;
+          gap: 24px;
+          align-items: flex-start;
+        }
+
+        .results-layout .table-wrapper {
+          flex: 2.2;
+          min-width: 0;
+        }
+
+        .detail-panel {
+          flex: 1;
+          min-width: 300px;
+          max-width: 360px;
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          padding: 24px;
+        }
+
+        .detail-empty {
+          color: #94a3b8;
+          font-size: 14px;
+          text-align: center;
+          padding: 24px 0;
+        }
+
+        .detail-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 0 0 20px 0;
+        }
+
+        .detail-field {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin-bottom: 16px;
+        }
+
+        .detail-label {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .detail-doc-link {
+          background: none;
+          border: none;
           color: #2563eb;
+          font-weight: 600;
           font-size: 15px;
+          cursor: pointer;
+          padding: 0;
+          text-align: left;
+        }
+
+        .detail-doc-link:hover {
+          text-decoration: underline;
+        }
+
+        .detail-box {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          border-radius: 10px;
+          padding: 12px 16px;
+          margin-bottom: 12px;
+        }
+
+        .detail-box-danger {
+          background: #fef2f2;
+          border-left: 4px solid #dc2626;
+        }
+
+        .detail-box-danger strong {
+          color: #dc2626;
+        }
+
+        .detail-box-success {
+          background: #ecfdf5;
+          border-left: 4px solid #16a34a;
+        }
+
+        .detail-box-success strong {
+          color: #16a34a;
+        }
+
+        .detail-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .detail-btn {
+          padding: 12px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+        }
+
+        .detail-btn-primary {
+          background: #2563eb;
+          color: white;
+        }
+
+        .detail-btn-success {
+          background: #16a34a;
+          color: white;
+        }
+
+        .detail-btn-outline {
+          background: white;
+          border: 1px solid #e2e8f0;
+          color: #334155;
         }
 
         /* Table */
@@ -461,6 +672,10 @@ const AnomaliesPage = () => {
           background: #f8fafc;
         }
 
+        .anomalies-table tbody tr.row-selected {
+          background: #eff6ff;
+        }
+
         /* Document link */
         .document-link {
           background: none;
@@ -480,7 +695,9 @@ const AnomaliesPage = () => {
 
         /* Severity badges */
         .severity-badge {
-          display: inline-block;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
           padding: 4px 10px;
           border-radius: 20px;
           font-size: 11px;
@@ -517,28 +734,18 @@ const AnomaliesPage = () => {
         }
 
         .status-open {
-          background: #ffedd5;
-          color: #ea580c;
+          background: #eff6ff;
+          color: rgb(37, 99, 235);
+        }
+
+        .status-review {
+          background: #fffbeb;
+          color: #f59e0b;
         }
 
         .status-fixed {
-          background: #d1fae5;
-          color: #059669;
-        }
-
-        .status-hidden {
-          background: #ede9fe;
-          color: #7c3aed;
-        }
-
-        .status-incorrect {
-          background: #fef2f2;
-          color: #dc2626;
-        }
-
-        .status-insufficient {
-          background: #f1f5f9;
-          color: #475569;
+          background: #ecfdf5;
+          color: #16a34a;
         }
 
         /* View button */

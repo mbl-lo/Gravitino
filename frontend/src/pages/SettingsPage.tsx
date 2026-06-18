@@ -265,10 +265,10 @@ const SettingsPage = () => {
 }
 
 const styles = {
-  page: {margin: '0 auto', padding: '24px 32px 100px 32px', backgroundColor: '#f8fafc', minHeight: '100vh' },
+  page: {margin: '0 auto', padding: '8px 8px 32px', backgroundColor: '#f8fafc', minHeight: '100vh' },
   header: { marginBottom: '24px' },
-  title: { fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0' },
-  subtitle: { color: '#64748b', fontSize: '14px', margin: 0 },
+  title: { fontSize: '30px', lineHeight: 1.25, fontWeight: '700', letterSpacing: '-0.02em', color: '#101828', margin: 0 },
+  subtitle: { color: 'rgb(102, 112, 133)', fontSize: '15px', margin: '6px 0px 0px' },
   layoutContainer: { display: 'flex', gap: '24px', flexWrap: 'wrap' as const, alignItems: 'flex-start' },
   mainColumn: { flex: '1.4', minWidth: '400px', display: 'flex', flexDirection: 'column' as const, gap: '24px' },
   sideColumn: { flex: '1', minWidth: '350px', display: 'flex', flexDirection: 'column' as const, gap: '24px' },

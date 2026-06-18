@@ -151,11 +151,11 @@ export default function UsersPage() {
   const inactive = users.filter((u) => !u.isActive).length;
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+    <div style={{ padding: '8px 8px 32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', margin: 0 }}>Пользователи</h1>
-          <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Управление пользователями и правами доступа</p>
+          <h1 style={{ fontSize: '30px', lineHeight: 1.25, fontWeight: '700', letterSpacing: '-0.02em', color: '#101828', margin: 0 }}>Пользователи</h1>
+          <p style={{ margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' }}>Управление пользователями и правами доступа</p>
         </div>
         <div style={{ position: 'relative' }}>
           <button

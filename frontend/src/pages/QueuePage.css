@@ -1,7 +1,8 @@
 .queue-page {
   width: 100%;
   margin: 0 auto;
-  padding: 24px;
+  padding: 8px 8px 32px;
+  box-sizing: border-box;
   color: #101828;
 }
 
@@ -13,15 +14,15 @@
   margin: 0;
   color: #101828;
   font-size: 30px;
-  line-height: 36px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
   font-weight: 700;
 }
 
 .queue-header p {
-  margin: 4px 0 0;
-  color: #4b5563;
-  font-size: 16px;
-  line-height: 24px;
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 15px;
 }
 
 .queue-tabs-card,

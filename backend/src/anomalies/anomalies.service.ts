@@ -118,7 +118,7 @@ export class AnomaliesService {
       anomalies.push({
         validationRuleId: odometerRule.id,
         type: 'odometer_order',
-        severity: 'high',
+        severity: 'critical',
         fieldKey: 'odometer_end',
         message: 'odometer_end must be greater than odometer_start',
         expectedValue: `> ${odometerStart}`,
@@ -248,14 +248,16 @@ export class AnomaliesService {
       return null;
     }
 
+    const deviationPercent = ((fuelUsed - expectedFuel) / expectedFuel) * 100;
+
     return {
       validationRuleId,
       type: 'fuel_overrun',
-      severity: fuelUsed > expectedFuel * 1.5 ? 'high' : 'medium',
+      severity: fuelUsed > expectedFuel * 1.5 ? 'critical' : 'medium',
       fieldKey: 'fuel_used_liters',
       message: 'fuel consumption exceeds the basic allowed limit',
-      expectedValue: `<= ${this.round(maxFuel)}`,
-      actualValue: String(this.round(fuelUsed)),
+      expectedValue: `±${maxFuelDeviationPercent}%`,
+      actualValue: `+${this.round(deviationPercent)}%`,
     };
   }
 
@@ -281,11 +283,12 @@ export class AnomaliesService {
     fields: DocumentFieldValue[],
     validationRuleId: string,
   ): PreparedAnomaly | null {
-    const requiredSignatures = [
-      'signature_driver',
-      'signature_mechanic',
-      'signature_dispatcher',
-    ];
+    const signatureLabels: Record<string, string> = {
+      signature_driver: 'Подпись водителя',
+      signature_mechanic: 'Подпись механика',
+      signature_dispatcher: 'Подпись диспетчера',
+    };
+    const requiredSignatures = Object.keys(signatureLabels);
     const missing = requiredSignatures.filter(
       (fieldKey) => !this.booleanField(fields, fieldKey),
     );
@@ -300,8 +303,8 @@ export class AnomaliesService {
       severity: 'critical',
       fieldKey: 'signatures',
       message: 'required signatures are missing or not recognized',
-      expectedValue: requiredSignatures.join(', '),
-      actualValue: missing.join(', '),
+      expectedValue: 'Все подписи распознаны',
+      actualValue: `Не распознана: ${missing.map((key) => signatureLabels[key]).join(', ')}`,
     };
   }
 
@@ -316,7 +319,7 @@ export class AnomaliesService {
       return {
         validationRuleId,
         type: 'time_invalid',
-        severity: 'high',
+        severity: 'critical',
         fieldKey: departure === null ? 'departure_time' : 'arrival_time',
         message: 'departure_time and arrival_time must be valid',
         expectedValue: 'HH:mm departure and arrival time',
@@ -328,7 +331,7 @@ export class AnomaliesService {
       return {
         validationRuleId,
         type: 'time_invalid',
-        severity: 'high',
+        severity: 'critical',
         fieldKey: 'arrival_time',
         message: 'arrival_time must be later than departure_time',
         expectedValue: `> ${this.fieldRawValue(fields, 'departure_time')}`,
@@ -461,7 +464,14 @@ export class AnomaliesService {
   async getAllAnomalies() {
     const anomalies = await this.prisma.anomaly.findMany({
       include: {
-        document: true,
+        document: {
+          include: {
+            fields: {
+              where: { fieldKey: 'document_number' },
+              select: { recognizedValue: true, correctedValue: true },
+            },
+          },
+        },
       },
       orderBy: {
         id: 'desc',
@@ -471,6 +481,7 @@ export class AnomaliesService {
     const fieldLabels: Record<string, string> = {
       odometer_end: 'Расчетный пробег',
       fuel_used_liters: 'Отклонение топлива',
+      fuel_consumption: 'Отклонение топлива',
       signatures: 'Подпись механика/водителя',
       arrival_time: 'Время работы/выезда',
       departure_time: 'Время выезда',
@@ -485,14 +496,51 @@ export class AnomaliesService {
       time_invalid: 'Неверный временной интервал',
     };
 
-    return anomalies.map((anomaly) => ({
-      id: anomaly.id,
-      documentId: anomaly.documentId,
-      documentNumber: anomaly.document?.originalFileName || 'Новый',
-      type: typeLabels[anomaly.type] || anomaly.type,
-      fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
-      severity: anomaly.severity,
-      status: anomaly.status,
-    }));
+    const recommendedActions: Record<string, string> = {
+      odometer_order:
+        'Проверить показания спидометра при выезде и возвращении в путевом листе',
+      fuel_overrun:
+        'Проверить фактическую заправку, маршрут и корректность показаний спидометра',
+      missing_signature:
+        'Запросить подпись у водителя/механика/диспетчера или повторно отправить документ на подпись',
+      time_invalid:
+        'Проверить корректность времени выезда, возвращения и расчёт времени работы',
+    };
+
+    const ruleDescriptions: Record<string, string> = {
+      odometer_order:
+        'Показание спидометра при возвращении должно быть больше, чем при выезде',
+      fuel_overrun:
+        'Расход топлива не должен превышать норму более чем на допустимый процент отклонения',
+      missing_signature:
+        'В документе должны быть распознаны подписи водителя, механика и диспетчера',
+      time_invalid:
+        'Время возвращения должно быть позже времени выезда, а общее время работы — соответствовать расчётному',
+    };
+
+    return anomalies.map((anomaly) => {
+      const documentNumberField = anomaly.document?.fields?.[0];
+      const documentNumber =
+        documentNumberField?.correctedValue ??
+        documentNumberField?.recognizedValue ??
+        anomaly.document?.documentNumber ??
+        anomaly.document?.originalFileName ??
+        'Новый';
+
+      return {
+        id: anomaly.id,
+        documentId: anomaly.documentId,
+        documentNumber,
+        type: typeLabels[anomaly.type] || anomaly.type,
+        fieldLabel: fieldLabels[anomaly.fieldKey!] || anomaly.fieldKey,
+        severity: anomaly.severity,
+        status: anomaly.status,
+        detectedAt: anomaly.createdAt,
+        rule: ruleDescriptions[anomaly.type] || anomaly.message,
+        expectedValue: anomaly.expectedValue,
+        actualValue: anomaly.actualValue,
+        recommendedAction: recommendedActions[anomaly.type] || null,
+      };
+    });
   }
 }

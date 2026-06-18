@@ -85,7 +85,7 @@ const Dashboard = () => {
     <div className="dashboard-page">
       <div className="dashboard-header">
         <h1>Дашборд</h1>
-        <p className="subtitle">Контроль обработки путевых листов и качества распознавания</p>
+        <p style={{ margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' }}>Контроль обработки путевых листов и качества распознавания</p>
       </div>
       <div className="metrics-grid">
         <div className="metric-card">
@@ -197,10 +197,9 @@ const Dashboard = () => {
         </div>
       </div>
       <style>{`
-        .dashboard-page { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; min-height: 100vh; padding-bottom: 40px; }
+        .dashboard-page { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; min-height: 100vh; padding: 8px 8px 32px; box-sizing: border-box; }
         .dashboard-header { margin-bottom: 24px; }
-        .dashboard-header h1 { font-size: 30px; line-height: 36px; font-weight: 700; color: #101828; margin: 0; }
-        .subtitle { color: #4b5563; font-size: 16px; line-height: 24px; margin: 4px 0 0 0; }
+        .dashboard-header h1 { font-size: 30px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: #101828; margin: 0; }
 
         /* Metrics Cards Grid */
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }

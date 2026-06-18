@@ -70,7 +70,7 @@ const UploadPage = () => {
     <div className="upload-page">
       <div className="page-header">
         <h1>Загрузка путевых листов</h1>
-        <p className="subtitle">Контроль обработки путевых листов и качества распознавания</p>
+        <p style={{ margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' }}>Контроль обработки путевых листов и качества распознавания</p>
       </div>
 
       {/* Прямоугольник 1: загрузка */}

@@ -38,10 +38,10 @@ const MOCK_QUALITY: FieldQuality[] = [
 ]
 
 const statCards = [
-  { key: 'labeledFields', label: 'Размеченных полей', icon: <DatabaseIcon />, color: '#2563EB', bgColor: '#eff6ff' },
-  { key: 'modelAccuracy', label: 'Точность модели', icon: <RiseOutlined style={{ fontSize: '24px', color: '#059669' }} />, color: '#059669', bgColor: '#ecfdf5' },
+  { key: 'labeledFields', label: 'Размеченных полей', icon: <DatabaseIcon />, color: '#2563eb', bgColor: '#eff6ff' },
+  { key: 'modelAccuracy', label: 'Точность модели', icon: <RiseOutlined style={{ fontSize: '24px', color: '#16a34a' }} />, color: '#16a34a', bgColor: '#ecfdf5' },
   { key: 'needsLabeling', label: 'Требуют разметки', icon: <ExclamationCircleOutlined style={{ fontSize: '24px', color: '#f59e0b' }} />, color: '#f59e0b', bgColor: '#fffbeb' },
-  { key: 'lastTraining', label: 'Последнее обучение', icon: <CalendarOutlined style={{ fontSize: '24px', color: '#6b7280' }} />, color: '#6b7280', bgColor: '#f3f4f6' }
+  { key: 'lastTraining', label: 'Последнее обучение', icon: <CalendarOutlined style={{ fontSize: '24px', color: '#4b5563' }} />, color: '#4b5563', bgColor: '#f3f4f6' }
 ] as const
 
 const TrainingPage = () => {
@@ -91,7 +91,7 @@ const TrainingPage = () => {
   }, [currentDocument])
 
   const getAccuracyColor = (accuracy: number) => {
-    if (accuracy >= 91) return '#059669'
+    if (accuracy >= 91) return '#16a34a'
     return '#f59e0b'
   }
 
@@ -109,8 +109,10 @@ const TrainingPage = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.mainTitle}>Обучающие данные</h1>
-      <p style={styles.subtitle}>Разметка и улучшение качества распознавания рукописных полей</p>
+      <div style={styles.header}>
+        <h1 style={styles.mainTitle}>Обучающие данные</h1>
+        <p style={styles.subtitle}>Разметка и улучшение качества распознавания рукописных полей</p>
+      </div>
 
       <div style={styles.statsGrid}>
         {statCards.map(card => (
@@ -156,7 +158,7 @@ const TrainingPage = () => {
                       </div>
                       <div style={styles.fieldMeta}>
                         {field.correctValue ? <span style={styles.badgeDone}>Размечено</span> : <span style={styles.badgePending}>Ожидает</span>}
-                        <span style={{ ...styles.fieldConfidence, color: field.confidence >= 80 ? '#059669' : field.confidence >= 60 ? '#f59e0b' : '#dc2626' }}>{field.confidence}%</span>
+                        <span style={{ ...styles.fieldConfidence, color: field.confidence >= 80 ? '#16a34a' : field.confidence >= 60 ? '#f59e0b' : '#dc2626' }}>{field.confidence}%</span>
                       </div>
                     </div>
                   ))}
@@ -280,10 +282,11 @@ const TrainingPage = () => {
 }
 
 const styles = {
-  container: { padding: '32px 24px' },
+  container: { padding: '8px 8px 32px' },
   loading: { textAlign: 'center' as const, color: '#6b7280', padding: '48px' },
-  mainTitle: { fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#1f2937' },
-  subtitle: { fontSize: '16px', color: '#6b7280', margin: '0 0 32px 0' },
+  header: { marginBottom: '24px' },
+  mainTitle: { fontSize: '30px', lineHeight: 1.25, fontWeight: '700', letterSpacing: '-0.02em', color: '#101828', margin: 0 },
+  subtitle: { margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' },
   statCard: { backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px' },
   statIcon: { width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -305,7 +308,7 @@ const styles = {
   fieldType: { fontWeight: '500', color: '#1f2937' },
   fieldOcr: { fontSize: '14px', color: '#6b7280' },
   fieldMeta: { display: 'flex', alignItems: 'center', gap: '16px' },
-  badgeDone: { fontSize: '13px', color: '#059669', fontWeight: '500' },
+  badgeDone: { fontSize: '13px', color: '#16a34a', fontWeight: '500' },
   badgePending: { fontSize: '13px', color: '#f59e0b', fontWeight: '500' },
   fieldConfidence: { fontSize: '13px', fontWeight: '600' },
   documentPlaceholder: { flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px 24px', backgroundColor: '#f9fafb', gap: '16px' },
@@ -332,7 +335,7 @@ const styles = {
   difficultyButton: { padding: '8px 20px', backgroundColor: 'white', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#6b7280', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' },
   difficultyButtonActive: { borderColor: '#3b82f6', color: '#3b82f6', backgroundColor: '#eff6ff' },
   editorActions: { display: 'flex', flexDirection: 'column' as const, gap: '12px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' },
-  btnConfirm: { width: '100%', padding: '12px 24px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  btnConfirm: { width: '100%', padding: '12px 24px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   btnFix: { width: '100%', padding: '12px 24px', backgroundColor: 'white', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', textAlign: 'center' as const },
   btnTrain: { width: '100%', padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', textAlign: 'center' as const },
   qualitySection: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },

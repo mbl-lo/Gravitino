@@ -87,7 +87,7 @@ const ArchivePage = () => {
       <div className="page-header">
         <div className="archive-container">
           <h1>Архив путевых листов</h1>
-          <p className="subtitle">Поиск, фильтрация и просмотр всех обработанных документов</p>
+          <p style={{ margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' }}>Поиск, фильтрация и просмотр всех обработанных документов</p>
         </div>
       </div>
       <div className="archive-container">
@@ -207,12 +207,11 @@ const ArchivePage = () => {
       </div>
 
       <style>{`
-        .archive-page { min-height: 100vh; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
-        .archive-container { margin: 0 auto; padding: 0 32px; }
-        .page-header { background: white; border-bottom: 1px solid #e2e8f0; padding: 24px 0; margin-bottom: 24px; }
-        .page-header h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; }
-        .subtitle { color: #64748b; font-size: 13px; margin: 0; }
-        
+        .archive-page { min-height: 100vh; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; padding-top: 8px; padding-bottom: 32px; box-sizing: border-box; }
+        .archive-container { margin: 0 auto; padding: 0 8px; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 30px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: #101828; margin: 0; }
+
         .search-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
         .section-title { font-size: 14px; font-weight: 600; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
         .filters-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
