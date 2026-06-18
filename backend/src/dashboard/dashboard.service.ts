@@ -124,4 +124,59 @@ export class DashboardService {
       fieldAccuracy,
     };
   }
+
+  async getDashbordStats() {
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(todayStart.getDate() - 1);
+    const sevenDaysAgo = new Date(todayStart);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const todayCount = await this.prisma.document.count({
+      where: {
+        createdAt: { gte: todayStart },
+        status: { in: ['processed', 'confirmed'] }
+        },
+      });
+
+      const yesterdayCount = await this.prisma.document.count({
+        where: {
+          createdAt: { gte: yesterdayStart, lt: todayStart },
+          status: { in: ['processed', 'confirmed'] }
+        }
+      });
+
+      const todayOcr = await this.prisma.document.aggregate({
+        where: {
+          createdAt: { gte: todayStart },
+          status: { in: ['processed', 'confirmed'] }
+        },
+        _avg: {ocrConfidence: true}
+      });
+      const avgTodayOcr = todayOcr._avg.ocrConfidence || 0;
+
+      const weekOcr = await this.prisma.document.aggregate({
+        where: {
+          createdAt: { gte: sevenDaysAgo, lt: todayStart },
+          status: { in: ['processed', 'confirmed'] }
+        },
+        _avg: {ocrConfidence: true}
+      });
+      const avgWeekOcr = weekOcr._avg.ocrConfidence || 0;
+
+      const confidencePercent = Math.round((Number(avgTodayOcr) - Number(avgWeekOcr)) * 100);
+
+      let percentChange = 0;
+      if (yesterdayCount > 0) {
+        percentChange = Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100);
+      } else if (todayCount > 0) {
+        percentChange = 100;
+      }
+
+      return {
+        processedPercent: percentChange,
+        confidencePercent: confidencePercent
+      };
+    }
 }

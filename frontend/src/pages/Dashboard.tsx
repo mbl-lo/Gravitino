@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, LinkOutlined, RiseOutlined, WarningOutlined } from '@ant-design/icons'
-import { getDashboardStats } from '../services/api'
+import { CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, LinkOutlined, RiseOutlined, WarningOutlined, FallOutlined} from '@ant-design/icons'
+import { getDashboardStats, getDashboardTrends } from '../services/api'
 
 interface DashboardData {
   cards: {
     processedToday: number
+    processedPercent: number
     avgOcrAccuracy: number
+    confidencePercent: number
     activeAnomaliesCount: number
     waitingReview: number
   }
@@ -23,8 +25,23 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const response = await getDashboardStats()
-        setData(response.data as unknown as DashboardData)
+        const [statsResponse, trendsResponse] = await Promise.all([
+        getDashboardStats(),
+        getDashboardTrends()
+      ])
+
+      const statsData = statsResponse.data as any;
+      const trendsData = trendsResponse.data as any;
+
+      const combinedData: DashboardData = {
+        ...statsData,
+        cards: {
+          ...statsData.cards,
+          processedPercent: trendsData.processedPercent ?? 0,
+          confidencePercent: trendsData.confidencePercent ?? 0
+        }
+      }
+      setData(combinedData)
       } catch (err) {
         console.error('Ошибка загрузки статистики дашборда:', err)
       } finally {
@@ -42,6 +59,28 @@ const Dashboard = () => {
     )
   }
 
+  const renderPercent = (value: number, periodLabel: string) => {
+    if (value > 0) {
+      return (
+        <span className="metric-trend success-text">
+          <RiseOutlined /> +{value}% {periodLabel}
+        </span>
+      )
+    }
+    if (value < 0) {
+      return (
+        <span className="metric-trend danger-text">
+          <FallOutlined /> {value}% {periodLabel}
+        </span>
+      )
+    }
+    return (
+      <span className="metric-trend text-muted">
+        0% {periodLabel}
+      </span>
+    )
+  }
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
@@ -53,7 +92,7 @@ const Dashboard = () => {
           <div className="metric-meta">
             <span className="metric-title">Обработано сегодня</span>
             <span className="metric-value">{data.cards.processedToday}</span>
-            <span className="metric-trend success-text"><RiseOutlined /> +12% к вчера</span>
+            {renderPercent(data.cards.processedPercent, 'к вчера')}
           </div>
           <span className="metric-icon blue-icon"><FileTextOutlined /></span>
         </div>
@@ -61,9 +100,11 @@ const Dashboard = () => {
           <div className="metric-meta">
             <span className="metric-title">Средняя точность OCR</span>
             <span className="metric-value">{data.cards.avgOcrAccuracy}%</span>
-            <span className="metric-trend success-text"><RiseOutlined /> +2,3% к прошлой неделе</span>
-          </div>
-          <span className="metric-icon green-icon"><RiseOutlined /></span>
+            {renderPercent(data.cards.confidencePercent, 'к прошлой неделе')}
+        </div>
+          <span className={`metric-icon ${data.cards.confidencePercent >= 0 ? 'green-icon' : 'red-icon'}`}>
+          {data.cards.confidencePercent >= 0 ? <RiseOutlined /> : <FallOutlined />}
+          </span>
         </div>
         <div className="metric-card">
           <div className="metric-meta">
@@ -170,6 +211,8 @@ const Dashboard = () => {
         .metric-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 500; }
         .metric-trend .anticon { font-size: 12px; }
         .success-text { color: #16A34A; }
+        .danger-text { color: #DC2626; }
+        .red-icon { background: #fef2f2; color: #DC2626; }
         .warning-text { color: #F59E0B; }
         .text-muted { color: #6b7280; }
         .metric-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }

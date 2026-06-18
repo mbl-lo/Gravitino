@@ -135,6 +135,9 @@ export const getDashboardStats = () => {
   return api.get<DashboardStats>('/dashboard/stats')
 }
 
+export const getDashboardTrends = () => {
+  return api.get('/dashboard/trends')
+}
 /**
  * Получение списка последних документов
  * @param limit - количество документов (по умолчанию 5)
