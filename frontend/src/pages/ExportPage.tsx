@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { useState } from 'react'
 
 type IconProps = {
   children: ReactNode
@@ -164,8 +165,25 @@ const mappingRows = [
 ] as const
 
 const ExportPage = () => {
+  const [mappingData, setMappingData] = useState(() => 
+    mappingRows.map(([source, target, required, transformation]) => ({
+      source,
+      target,
+      required,
+      transformation
+    }))
+  );
+
   const scrollToMapping = () => {
     document.getElementById('field-mapping')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleCheckboxChange = (sourceField: string) => {
+    setMappingData(prevData =>
+      prevData.map(row =>
+        row.source === sourceField ? { ...row, required: !row.required } : row
+      )
+    )
   }
 
   return (
@@ -269,7 +287,7 @@ const ExportPage = () => {
               </tr>
             </thead>
             <tbody>
-              {mappingRows.map(([source, target, required, transformation]) => (
+              {mappingData.map(({source, target, required, transformation}) => (
                 <tr key={source}>
                   <td style={{ ...styles.tableCell, ...styles.sourceField }}>{source}</td>
                   <td style={{ ...styles.tableCell, ...styles.targetField }}>{target}</td>
@@ -278,7 +296,7 @@ const ExportPage = () => {
                       aria-label={`${source}: обязательное поле`}
                       type="checkbox"
                       checked={required}
-                      readOnly
+                      onChange={() => handleCheckboxChange(source)}
                       style={styles.checkbox}
                     />
                   </td>

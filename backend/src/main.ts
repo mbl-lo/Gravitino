@@ -6,11 +6,13 @@ async function bootstrap() {
 
   // Разрешить все источники (для разработки)
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
   console.log('API: http://localhost:3000');
 }
 
