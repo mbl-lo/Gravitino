@@ -91,7 +91,7 @@ const IntegrationCard = ({
   status,
   action,
 }: IntegrationCardProps) => (
-  <article style={styles.integrationCard}>
+  <article className="export-integration-card" style={styles.integrationCard}>
     <div style={{ ...styles.iconBox, color: iconColor, backgroundColor: iconBackground }}>
       {icon}
     </div>
@@ -170,12 +170,40 @@ const ExportPage = () => {
 
   return (
     <div style={styles.page}>
+      <style>{`
+        .export-integration-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .export-secondary-button {
+          cursor: default;
+          transition: border-color 0.2s ease;
+        }
+
+        .export-secondary-button:hover {
+          border-color: #2563eb !important;
+        }
+
+        @media (max-width: 1100px) {
+          .export-integration-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .export-integration-card {
+            min-height: auto !important;
+            padding: 20px !important;
+          }
+        }
+      `}</style>
+
       <header style={styles.header}>
         <h1 style={styles.title}>Экспорт и интеграции</h1>
         <p style={styles.subtitle}>Передача структурированных данных в учетные системы</p>
       </header>
 
-      <section style={styles.integrationGrid} aria-label="Доступные интеграции">
+      <section className="export-integration-grid" style={styles.integrationGrid} aria-label="Доступные интеграции">
         <IntegrationCard
           icon={<FileJsonIcon />}
           iconColor="#2563eb"
@@ -195,7 +223,7 @@ const ExportPage = () => {
           title="Бухгалтерская система"
           description="Интеграция с 1С и другими системами учета"
           status={<span style={styles.neutralBadge}>Не подключено</span>}
-          action={<button type="button" style={styles.secondaryButton}>Подключить</button>}
+          action={<button type="button" className="export-secondary-button" style={styles.secondaryButton}>Подключить</button>}
         />
         <IntegrationCard
           icon={<FileTextIcon />}
@@ -204,7 +232,7 @@ const ExportPage = () => {
           title="СЭД"
           description="Система электронного документооборота"
           status={<span style={styles.successBadge}><CheckIcon />Подключено</span>}
-          action={<button type="button" style={styles.secondaryButton}><SettingsIcon />Настройки</button>}
+          action={<button type="button" className="export-secondary-button" style={styles.secondaryButton}><SettingsIcon />Настройки</button>}
         />
         <IntegrationCard
           icon={<CodeIcon />}
@@ -213,7 +241,7 @@ const ExportPage = () => {
           title="API"
           description="REST API для интеграции с вашими системами"
           status={<span style={styles.successBadge}><CheckIcon />Активно</span>}
-          action={<button type="button" style={styles.secondaryButton}><ExternalLinkIcon />Документация</button>}
+          action={<button type="button" className="export-secondary-button" style={styles.secondaryButton}><ExternalLinkIcon />Документация</button>}
         />
       </section>
 
@@ -262,7 +290,7 @@ const ExportPage = () => {
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    maxWidth: '1400px',
+    maxWidth: '1280px',
     margin: '0 auto',
     padding: '8px 8px 32px',
     color: '#101828',
@@ -282,16 +310,15 @@ const styles: Record<string, CSSProperties> = {
   },
   integrationGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-    gap: '20px',
-    marginBottom: '20px',
+    gap: '24px',
+    marginBottom: '24px',
   },
   integrationCard: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '16px',
-    minHeight: '190px',
-    padding: '24px',
+    minHeight: '210px',
+    padding: '28px',
     backgroundColor: '#ffffff',
     border: '1px solid #eef1f5',
     borderRadius: '20px',
@@ -348,7 +375,7 @@ const styles: Record<string, CSSProperties> = {
     color: '#101828',
     fontSize: '14px',
     fontWeight: 600,
-    cursor: 'pointer',
+    cursor: 'default',
   },
   neutralBadge: {
     display: 'inline-flex',
