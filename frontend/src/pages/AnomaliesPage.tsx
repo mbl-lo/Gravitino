@@ -269,12 +269,18 @@ const AnomaliesPage = () => {
       <style>{`
         .anomalies-page {
           min-height: 100vh;
+          width: 100% !important;
+          max-width: none !important;
+          flex-shrink: 0 !important;
           background-color: #f8fafc;
         }
 
         .container {
           margin: 0 auto;
+          width: 100% !important;
+          max-width: none !important;
           padding: 0 32px;
+          box-sizing: border-box;
         }
 
         /* Header */
@@ -301,7 +307,7 @@ const AnomaliesPage = () => {
         /* Stats Grid */
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
+          grid-template-columns: repeat(8, 1fr);
           gap: 12px;
           margin-bottom: 28px;
         }
