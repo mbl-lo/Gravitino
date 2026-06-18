@@ -4,7 +4,6 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import DocumentDetail from './pages/DocumentDetail'  
 import Layout from './components/Layout/Layout'
-import PlaceholderPage from './components/PlaceholderPage'
 import UploadPage from './pages/UploadPage'
 import QueuePage from './pages/QueuePage'
 import './App.css'
@@ -13,6 +12,7 @@ import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
 import ArchivePage from './pages/ArchivePage'
 import ExportPage from './pages/ExportPage'
+import TrainingPage from './pages/TrainingPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -77,13 +77,10 @@ function AppRoutes() {
       
       <Route path="/training" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Обучающие данные" 
-            icon="🎓"
-            description="Наборы данных для обучения ИИ"
-          />
+          <TrainingPage />
         </ProtectedRoute>
       } />
+    
       
       <Route path="/settings" element={
         <ProtectedRoute>

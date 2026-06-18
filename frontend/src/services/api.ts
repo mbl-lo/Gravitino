@@ -169,6 +169,90 @@ export const confirmDocument = (documentId: string) => {
   return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
 }
 
+// --- ОБУЧАЮЩИЕ ДАННЫЕ (TrainingPage) ---
+
+/** Тип для статистики обучения */
+export interface TrainingStats {
+  labeledFields: number
+  modelAccuracy: number
+  needsLabeling: number
+  lastTraining: string
+}
+
+/** Тип для размеченного поля */
+export interface LabeledField {
+  id: string
+  documentId: string
+  fieldType: string
+  ocrValue: string
+  correctValue: string
+  confidence: number
+  difficulty: 'easy' | 'medium' | 'hard'
+  labeledAt: string
+  labeledBy: string
+}
+
+/** Тип для документа на разметке */
+export interface TrainingDocument {
+  id: string
+  name: string
+  fields: LabeledField[]
+  totalFields: number
+  labeledFields: number
+}
+
+/**
+ * Получение статистики обучения
+ */
+export const getTrainingStats = () => {
+  return api.get<TrainingStats>('/training/stats')
+}
+
+/**
+ * Получение документа для разметки
+ */
+export const getTrainingDocument = (documentId: string) => {
+  return api.get<TrainingDocument>(`/training/documents/${encodeURIComponent(documentId)}`)
+}
+
+/**
+ * Получение списка документов для разметки
+ */
+export const getTrainingDocuments = () => {
+  return api.get<TrainingDocument[]>('/training/documents')
+}
+
+/**
+ * Сохранение размеченного поля
+ * @param field - данные размеченного поля
+ */
+export const saveLabeledField = (field: Omit<LabeledField, 'id' | 'labeledAt' | 'labeledBy'>) => {
+  return api.post<LabeledField>('/training/fields', field)
+}
+
+/**
+ * Подтверждение разметки документа
+ * @param documentId - ID документа
+ */
+export const confirmTraining = (documentId: string) => {
+  return api.post(`/training/documents/${encodeURIComponent(documentId)}/confirm`)
+}
+
+/**
+ * Добавление документа в обучающий набор
+ * @param documentId - ID документа
+ */
+export const addToTrainingSet = (documentId: string) => {
+  return api.post(`/training/documents/${encodeURIComponent(documentId)}/add-to-set`)
+}
+
+/**
+ * Запуск обучения модели
+ */
+export const startTraining = () => {
+  return api.post('/training/start')
+}
+
 // --- НАСТРОЙКИ СИСТЕМЫ ---
 
 export interface SystemSettings {
