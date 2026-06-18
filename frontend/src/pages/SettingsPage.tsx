@@ -265,7 +265,7 @@ const SettingsPage = () => {
 }
 
 const styles = {
-  page: { maxWidth: '1400px', margin: '0 auto', padding: '24px 32px 100px 32px', backgroundColor: '#f8fafc', minHeight: '100vh' },
+  page: {margin: '0 auto', padding: '24px 32px 100px 32px', backgroundColor: '#f8fafc', minHeight: '100vh' },
   header: { marginBottom: '24px' },
   title: { fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0' },
   subtitle: { color: '#64748b', fontSize: '14px', margin: 0 },
