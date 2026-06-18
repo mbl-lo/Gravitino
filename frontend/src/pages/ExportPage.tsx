@@ -169,8 +169,13 @@ const ExportPage = () => {
   }
 
   return (
-    <div style={styles.page}>
+    <div className="export-page" style={styles.page}>
       <style>{`
+        .export-page {
+          container-name: export-page;
+          container-type: inline-size;
+        }
+
         .export-integration-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -184,13 +189,13 @@ const ExportPage = () => {
           border-color: #2563eb !important;
         }
 
-        @media (max-width: 1100px) {
+        @container export-page (max-width: 900px) {
           .export-integration-grid {
             grid-template-columns: minmax(0, 1fr);
           }
         }
 
-        @media (max-width: 640px) {
+        @container export-page (max-width: 600px) {
           .export-integration-card {
             min-height: auto !important;
             padding: 20px !important;
