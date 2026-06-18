@@ -12,6 +12,7 @@ import AnomaliesPage from './pages/AnomaliesPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
 import ArchivePage from './pages/ArchivePage'
+import TrainingPage from './pages/TrainingPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -80,13 +81,10 @@ function AppRoutes() {
       
       <Route path="/training" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Обучающие данные" 
-            icon="🎓"
-            description="Наборы данных для обучения ИИ"
-          />
+          <TrainingPage />
         </ProtectedRoute>
       } />
+    
       
       <Route path="/settings" element={
         <ProtectedRoute>
