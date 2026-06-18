@@ -208,7 +208,7 @@ const ArchivePage = () => {
 
       <style>{`
         .archive-page { min-height: 100vh; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
-        .archive-container { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
+        .archive-container { margin: 0 auto; padding: 0 32px; }
         .page-header { background: white; border-bottom: 1px solid #e2e8f0; padding: 24px 0; margin-bottom: 24px; }
         .page-header h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; }
         .subtitle { color: #64748b; font-size: 13px; margin: 0; }

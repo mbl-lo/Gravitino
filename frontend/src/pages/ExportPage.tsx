@@ -295,7 +295,6 @@ const ExportPage = () => {
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    maxWidth: '1280px',
     margin: '0 auto',
     padding: '8px 8px 32px',
     color: '#101828',
