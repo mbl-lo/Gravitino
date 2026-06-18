@@ -12,6 +12,7 @@ import AnomaliesPage from './pages/AnomaliesPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
 import ArchivePage from './pages/ArchivePage'
+import ExportPage from './pages/ExportPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -70,11 +71,7 @@ function AppRoutes() {
       
       <Route path="/export" element={
         <ProtectedRoute>
-          <PlaceholderPage 
-            title="Экспорт и интеграции" 
-            icon="📎"
-            description="Выгрузка данных и интеграция с системами"
-          />
+          <ExportPage />
         </ProtectedRoute>
       } />
       
