@@ -9,9 +9,11 @@ const UploadPage = () => {
   const [isDragover, setIsDragover] = useState(false);
   const [message, setMessage] = useState({ text: '', isError: false });
   const [isUploading, setIsUploading] = useState(false);
+  const [documentType, setDocumentType] = useState('Путевой лист легкового автомобиля');
+  const [division, setDivision] = useState('Центральный парк');
   const [tripDate, setTripDate] = useState('');
-  const [autoRecognize, setAutoRecognize] = useState(false);
-  const [checkAnomalies, setCheckAnomalies] = useState(false);
+  const [autoRecognize, setAutoRecognize] = useState(true);
+  const [checkAnomalies, setCheckAnomalies] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const addFiles = useCallback((files: FileList | File[]) => {
@@ -26,6 +28,14 @@ const UploadPage = () => {
     setMessage({ text: '', isError: false });
   }, []);
 
+  const handleCancel = () => {
+    setSelectedFiles([]);
+    setTripDate('');
+    setDivision('Центральный парк');
+    setDocumentType('Путевой лист легкового автомобиля');
+    setMessage({ text: 'Загрузка отменена', isError: false });
+  };
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       setMessage({ text: 'Выберите хотя бы один файл для загрузки', isError: true });
@@ -34,9 +44,14 @@ const UploadPage = () => {
     setIsUploading(true);
     setMessage({ text: '', isError: false });
     try {
-      const response = await uploadDocuments(selectedFiles);
+      const response = await uploadDocuments(selectedFiles, { documentType, division, tripDate});
       setMessage({ text: `Загружено ${response.data.files?.length || selectedFiles.length} файл(ов)`, isError: false });
       setSelectedFiles([]);
+      if (autoRecognize) {
+        setTimeout(() => {
+          navigate('/queue');
+        }, 1000);
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       setMessage({ text: error.response?.data?.error || 'Ошибка при загрузке файлов', isError: true });
@@ -229,7 +244,7 @@ const UploadPage = () => {
 
       {/* Прямоугольник 3: нижняя панель */}
       <div className="action-bar">
-        <button className="btn-cancel">Отменить</button>
+        <button className="btn-cancel" onClick={handleCancel}> Отменить</button>
         <button className="btn-submit" onClick={handleUpload} disabled={isUploading || selectedFiles.length === 0}>
           {isUploading ? 'Загрузка...' : 'Запустить распознавание'}
         </button>

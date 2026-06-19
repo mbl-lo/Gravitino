@@ -45,7 +45,7 @@ api.interceptors.response.use(
  * Загрузка одного или нескольких файлов на сервер
  * @param files - массив File объектов
  */
-export const uploadDocuments = (files: File[]) => {
+export const uploadDocuments = (files: File[], metadata: { documentType: string; division: string; tripDate: string }) => {
   const formData = new FormData()
 
   files.forEach((file) => {
@@ -55,7 +55,13 @@ export const uploadDocuments = (files: File[]) => {
   const userStr = localStorage.getItem('auth_user')
   const user = userStr ? JSON.parse(userStr) : {}
   formData.append('uploadedById', user.id)
-
+  formData.append('documentType', metadata.documentType)
+  formData.append('division', metadata.division)
+  
+  if (metadata.tripDate) {
+    formData.append('tripDate', metadata.tripDate)
+  }
+  
   return api.post('/documents/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 60000, 

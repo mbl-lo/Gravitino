@@ -8,6 +8,10 @@ export class DocumentsService {
 
   async create(files: any[], body: any) {
     const uploadedById = body?.uploadedById ?? '33333333-3333-4333-8333-333333333334';
+    const division = body?.division ?? 'Центральный парк';
+    const documentType = body?.documentType ?? 'Путевой лист легкового автомобиля';
+    const tripDate = body?.tripDate ? new Date(body.tripDate) : null;
+
     const createdDocuments = await Promise.all(
       files.map((file) =>
         this.prisma.document.create({
@@ -19,6 +23,9 @@ export class DocumentsService {
             uploadedById: uploadedById,
             ocrStatus: 'pending',
             status: 'processing',
+            //division: division,
+            tripDate: tripDate,
+            //documentType: documentType,
           },
         })
       )

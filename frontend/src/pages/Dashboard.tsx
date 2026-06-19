@@ -166,7 +166,7 @@ const Dashboard = () => {
             {data.recentAnomalies.length === 0 ? (
               <div className="empty-anomalies-stub"><CheckCircleOutlined /> Необработанных аномалий в системе нет</div>
             ) : (
-              data.recentAnomalies.map((anomaly, index) => (
+              data.recentAnomalies.map((anomaly) => (
                 <div key={anomaly.id} className="anomaly-item-row">
                   <div className={`anomaly-indicator-dot severity-${anomaly.severity}`} />
                   <div className="anomaly-text-block">
