@@ -50,7 +50,6 @@ export class DocumentsService {
       where.OR = [
         { originalFileName: { contains: filters.search, mode: 'insensitive' } },
         { documentNumber: { contains: filters.search, mode: 'insensitive' } },
-        ...(searchString.length >= 8 ? [{ id: { contains: searchString, mode: 'insensitive' } }] : []),
         {
           fields: {
             some: {
