@@ -12,6 +12,6 @@ export class DashboardController {
 
   @Get('trends')
   async getTrends() {
-    return this.dashboardService.getDashbordStats();
+    return this.dashboardService.getDashboardStats();
   }
 }

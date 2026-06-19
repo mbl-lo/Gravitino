@@ -13,7 +13,7 @@ interface DashboardData {
     waitingReview: number
   }
   dailyStats: Array<{ day: string; processed: number; warnings: number; manual: number }>
-  recentAnomalies: Array<{ id: string; message: string; documentNumber: string }>
+  recentAnomalies: Array<{ id: string; message: string; documentNumber: string, severity: string }>
   fieldAccuracy: Array<{ name: string; value: number }>
 }
 
@@ -168,7 +168,7 @@ const Dashboard = () => {
             ) : (
               data.recentAnomalies.map((anomaly, index) => (
                 <div key={anomaly.id} className="anomaly-item-row">
-                  <div className={`anomaly-indicator-dot severity-${index % 4}`} />
+                  <div className={`anomaly-indicator-dot severity-${anomaly.severity}`} />
                   <div className="anomaly-text-block">
                     <span className="anomaly-message-title">{anomaly.message}</span>
                     <span className="anomaly-doc-code">{anomaly.documentNumber}</span>
@@ -258,9 +258,10 @@ const Dashboard = () => {
         .anomaly-item-row { border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; transition: border-color 0.15s; }
         .anomaly-item-row:hover { border-color: #2563EB; }
         .anomaly-indicator-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
-        .severity-0, .severity-1 { background: #DC2626; }
-        .severity-2 { background: #F59E0B; }
-        .severity-3 { background: #9ca3af; }
+        .severity-critical {background: #DC2626;}
+        .severity-high { background: #EF4444; }
+        .severity-medium { background: #F59E0B; }
+        .severity-low { background: #9ca3af; }
         .anomaly-text-block { display: flex; flex-direction: column; gap: 8px; flex: 1; position: relative; }
         .anomaly-message-title { font-size: 14px; line-height: 20px; font-weight: 500; color: #101828; padding-right: 0; }
         .anomaly-doc-code { font-size: 12px; line-height: 16px; color: #6b7280; font-weight: 400; }

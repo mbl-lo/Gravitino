@@ -50,6 +50,7 @@ export class DashboardService {
       id: a.id,
       message: typeLabels[a.type] || a.message,
       documentNumber: a.document?.documentNumber || a.document?.originalFileName || 'PL-2026-00000',
+      severity: a.severity,
     }));
 
     const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
@@ -125,13 +126,15 @@ export class DashboardService {
     };
   }
 
-  async getDashbordStats() {
+  async getDashboardStats() {
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     const yesterdayStart = new Date(todayStart);
     yesterdayStart.setDate(todayStart.getDate() - 1);
     const sevenDaysAgo = new Date(todayStart);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date(todayStart);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
     const todayCount = await this.prisma.document.count({
       where: {
@@ -147,25 +150,25 @@ export class DashboardService {
         }
       });
 
-      const todayOcr = await this.prisma.document.aggregate({
-        where: {
-          createdAt: { gte: todayStart },
-          status: { in: ['processed', 'confirmed'] }
-        },
-        _avg: {ocrConfidence: true}
-      });
-      const avgTodayOcr = todayOcr._avg.ocrConfidence || 0;
-
-      const weekOcr = await this.prisma.document.aggregate({
+      const currentWeekOcr = await this.prisma.document.aggregate({
         where: {
           createdAt: { gte: sevenDaysAgo, lt: todayStart },
-          status: { in: ['processed', 'confirmed'] }
+          ocrConfidence: { not: null }
         },
         _avg: {ocrConfidence: true}
       });
-      const avgWeekOcr = weekOcr._avg.ocrConfidence || 0;
+      const avgCurrentWeekOcr = currentWeekOcr._avg.ocrConfidence || 0;
 
-      const confidencePercent = Math.round((Number(avgTodayOcr) - Number(avgWeekOcr)) * 100);
+      const pastWeekOcr = await this.prisma.document.aggregate({
+        where: {
+          createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+          ocrConfidence: { not: null }
+        },
+        _avg: {ocrConfidence: true}
+      });
+      const avgPastWeekOcr = pastWeekOcr._avg.ocrConfidence || 0;
+
+      const confidencePercent = Math.round((Number(avgCurrentWeekOcr) - Number(avgPastWeekOcr)) * 100);
 
       let percentChange = 0;
       if (yesterdayCount > 0) {
