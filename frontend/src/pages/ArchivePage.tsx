@@ -105,7 +105,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
   const handleExport = (doc: Document) => {
     const fmt = exportFormat.toLowerCase()
-    const url = `http://26.168.132.196:3000/documents/export?format=${fmt}&search=${encodeURIComponent(doc.documentNumber ?? doc.id)}`
+    const url = `http://localhost:3000/documents/export?format=${fmt}&search=${encodeURIComponent(doc.documentNumber ?? doc.id)}`
     const a = window.document.createElement('a')
     a.href = url
     a.download = `document-${doc.documentNumber ?? doc.id}.${fmt}`

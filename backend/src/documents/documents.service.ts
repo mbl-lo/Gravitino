@@ -43,49 +43,7 @@ export class DocumentsService {
     fromDate?: Date;
     toDate?: Date;
   }) {
-    const where: any = {};
-
-    if (filters?.search) {
-      const searchString = filters.search.trim();
-      where.OR = [
-        { originalFileName: { contains: filters.search, mode: 'insensitive' } },
-        { documentNumber: { contains: filters.search, mode: 'insensitive' } },
-        {
-          fields: {
-            some: {
-              recognizedValue: { contains: searchString, mode: 'insensitive' }
-            }
-          }
-        },
-        {
-          fields: {
-            some: {
-              correctedValue: { contains: searchString, mode: 'insensitive' }
-            }
-          }
-        }
-      ];
-    }
-
-    if (filters?.status) {
-      where.status = filters.status;
-    } else {
-      where.ocrStatus = { in: ['pending', 'processing', 'error', 'completed'] };
-    }
-
-    if (filters?.hasAnomalies !== undefined) {
-      where.hasAnomalies = filters.hasAnomalies;
-    }
-
-    if (filters?.fromDate || filters?.toDate) {
-      where.createdAt = {};
-      if (filters.fromDate) {
-        where.createdAt.gte = filters.fromDate;
-      }
-      if (filters.toDate) {
-        where.createdAt.lte = filters.toDate;
-      }
-    }
+    const where = this.buildWhereClause(filters);
 
     return this.prisma.document.findMany({
       where: where,
@@ -108,10 +66,35 @@ export class DocumentsService {
   }) {
     const documents = await this.getDocumentsList(filters);
 
+    const formattedDocuments = documents.map(doc => {
+      const fieldsObject = Object.fromEntries(
+        (doc.fields ?? []).map((field) => [
+          field.fieldKey,
+          {
+            label: field.fieldLabel,
+            value: field.correctedValue ?? field.recognizedValue,
+            isEdited: field.isEdited ?? false,
+          },
+        ])
+      );
+
+      return {
+        id: doc.id,
+        documentNumber: doc.documentNumber,
+        status: doc.status,
+        hasAnomalies: doc.hasAnomalies,
+        ocrConfidence: doc.ocrConfidence,
+        tripDate: doc.tripDate,
+        createdAt: doc.createdAt,
+        fields: fieldsObject,
+        anomalies: doc.anomalies
+      };
+    });
+
     return {
       exportedAt: new Date().toISOString(),
-      totalCount: documents.length,
-      documents,
+      totalCount: formattedDocuments.length,
+      documents: formattedDocuments, 
     };
   }
 
@@ -120,16 +103,17 @@ export class DocumentsService {
       const field = doc.fields?.find((f: any) => f.fieldKey === key);
       return field?.correctedValue ?? field?.recognizedValue ?? '';
     };
+    const fuelValue = f('fuel_consumption') || f('fuel_used_liters');
     return {
-      'Номер документа': doc.documentNumber ?? '',
-      'Дата': doc.tripDate ? new Date(doc.tripDate).toLocaleDateString('ru-RU') : '',
+      'Номер документа': doc.documentNumber ?? f('document_number') ?? '',
+      'Дата': doc.tripDate ? new Date(doc.tripDate).toLocaleDateString('ru-RU') : f('date'),
       'Водитель': f('driver_name'),
       'Табельный номер': f('driver_number'),
       'Автомобиль': f('vehicle_model'),
       'Госномер': f('vehicle_plate'),
       'Маршрут': f('route'),
       'Пробег (км)': f('mileage'),
-      'Расход топлива (л)': f('fuel_consumption'),
+      'Расход топлива (л)': fuelValue,
       'Статус': doc.status,
       'Точность OCR (%)': doc.ocrConfidence ? (Number(doc.ocrConfidence) * 100).toFixed(1) : '',
       'Аномалии': doc.hasAnomalies ? 'Да' : 'Нет',
@@ -139,10 +123,11 @@ export class DocumentsService {
   async exportToCsv(filters: { search?: string; status?: string; hasAnomalies?: boolean; fromDate?: Date; toDate?: Date }) {
     const documents = await this.getDocumentsList(filters);
     const rows = documents.map(doc => this.docToRow(doc));
-    if (rows.length === 0) return 'Номер документа,Дата,Водитель\n';
+    if (rows.length === 0) return '\uFEFFНомер документа;Дата;Водитель\n';
+
     const headers = Object.keys(rows[0]);
     const lines = [
-      headers.join(';'),
+      '\uFEFF' + headers.join(';'),
       ...rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(';')),
     ];
     return lines.join('\n');
@@ -162,6 +147,44 @@ export class DocumentsService {
     }
 
     return workbook.xlsx.writeBuffer() as unknown as Promise<Buffer>;
+  }
+
+  private buildWhereClause(filters: any) {
+    const where: any = {};
+    
+    if (filters?.search) {
+      const searchString = filters.search.trim();
+      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(searchString);
+
+      if (isUuid) {
+        where.id = searchString;
+      } else {
+        where.OR = [
+          { originalFileName: { contains: searchString, mode: 'insensitive' } },
+          { documentNumber: { contains: searchString, mode: 'insensitive' } },
+          { fields: { some: { recognizedValue: { contains: searchString, mode: 'insensitive' } } } },
+          { fields: { some: { correctedValue: { contains: searchString, mode: 'insensitive' } } } }
+        ];
+      }
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    } else if (!where.id) {
+      where.ocrStatus = { in: ['pending', 'processing', 'error', 'completed'] };
+    }
+    
+    if (filters?.hasAnomalies !== undefined) {
+      where.hasAnomalies = filters.hasAnomalies;
+    }
+
+    if (filters?.fromDate || filters?.toDate) {
+      where.createdAt = {};
+      if (filters.fromDate) where.createdAt.gte = filters.fromDate;
+      if (filters.toDate) where.createdAt.lte = filters.toDate;
+    }
+
+    return where;
   }
 
   async findOne(id: string) {
