@@ -23,6 +23,7 @@ const DocumentDetail = () => {
   const [isConfirming, setIsConfirming] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
   const loadDocumentRef = useRef<() => Promise<void>>(() => Promise.resolve())
+  const [editedFields, setEditedFields] = useState<Record<string, string>>({})
 
   const loadDocument = useCallback(async () => {
     try {
@@ -48,8 +49,17 @@ const DocumentDetail = () => {
     setIsValidating(true)
     setActionMessage('')
     try {
+      const updatePromises = Object.entries(editedFields).map(([fieldKey, value]) =>
+        updateDocumentField(id, fieldKey, value)
+      );
+      
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+
       await documentsService.validateDocument(id)
-      setActionMessage('Проверка завершена')
+      setActionMessage('Изменения успешно сохранены, документ перепроверен')
+      setEditedFields({});
       await loadDocument()
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } }
@@ -76,7 +86,8 @@ const DocumentDetail = () => {
   }
 
   const getFieldValue = (key: string) => {
-  
+    if (editedFields[key] !== undefined) return editedFields[key];
+    
     const field = document?.fields?.find(f => f.fieldKey === key);
     if (!field) return '—';
     return field.correctedValue ?? field.recognizedValue ?? '—';
@@ -242,25 +253,25 @@ const getStatusColor = () => {
             ['Подразделение', 'division'], ['Водитель', 'driver_name'], ['Табельный номер', 'driver_number'],
             ['Автомобиль', 'vehicle_model'], ['Госномер', 'vehicle_plate'],
             ['Маршрут', 'route'],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
 
           <Section title="Пробег" fields={[
             ['Спидометр при выезде', 'odometer_start'], ['Спидометр при возвращении', 'odometer_end'],
             ['Расчетный пробег', calculatedMileage, true],
             ['Пробег по маршруту', 'mileage'],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
 
           <Section title="Топливо" fields={[
             ['Остаток при выезде', 'fuel_start'], ['Выдано топлива', 'fuel_issued'],
             ['Остаток при возвращении', 'fuel_end'], ['Расчетный расход', 'fuel_consumption'],
             ['Норма расхода', 'fuel_rate'],
             ['Отклонение', 'fuel_deviation', true],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
 
           <Section title="Время работы" fields={[
             ['Время выезда', 'departure_time'], ['Время возвращения', 'arrival_time'],
             ['Общее время работы', 'total_hours'], ['Время простоя', 'downtime_hours'],
-          ]} doc={document} onUpdate={handleFieldUpdate} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
 
           <div style={styles.section}>
             <h3 style={styles.signatureTitle}>Подписи и отметки</h3>
@@ -342,12 +353,12 @@ const getFieldBorderColor = (key: string, isStatic?: boolean) => {
   return '#E5E7EB'
 }
 
-const Section = ({ title, titleIcon, fields, doc, onUpdate, v }: {
+const Section = ({ title, titleIcon, fields, doc, onChangeField, v }: {
   title: string
   titleIcon?: React.ReactNode
   fields: [string, string, boolean?][]
   doc: Document
-  onUpdate: (key: string, val: string) => void
+  onChangeField: (key: string, val: string) => void
   v: (key: string) => string
 }) => (
   <div style={styles.formSection}>
@@ -366,11 +377,11 @@ const Section = ({ title, titleIcon, fields, doc, onUpdate, v }: {
               <input
                 type="text"
                 disabled={Boolean(isStatic)}
-                defaultValue={value}
+                value={value === '—' ? '' : value}
                 readOnly={Boolean(isStatic)}
-                onBlur={(event) => {
-                  if (!isStatic && event.currentTarget.value !== value) {
-                    onUpdate(key, event.currentTarget.value)
+                onChange={(event) => {
+                  if (!isStatic) {
+                    onChangeField(key, event.target.value)
                   }
                 }}
                 style={{
