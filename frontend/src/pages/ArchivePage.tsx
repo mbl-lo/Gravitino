@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
+import { HistoryOutlined, EyeOutlined } from '@ant-design/icons';
+
 
 const ArchivePage = () => {
   const navigate = useNavigate()
@@ -36,8 +38,14 @@ const ArchivePage = () => {
   }, [fromDate, toDate, onlyAnomalies, globalSearch])
 
   useEffect(() => {
-    loadDocuments()
-  }, [loadDocuments])
+  loadDocumentsRef.current = loadDocuments
+}, [loadDocuments])
+
+useEffect(() => {
+  loadDocumentsRef.current()
+}, [])
+
+const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
   const handleReset = () => {
     setFromDate('')
@@ -97,7 +105,7 @@ const ArchivePage = () => {
 
   const handleExport = (doc: Document) => {
     const fmt = exportFormat.toLowerCase()
-    const url = `http://localhost:3000/documents/export?format=${fmt}&search=${encodeURIComponent(doc.documentNumber ?? doc.id)}`
+    const url = `http://26.168.132.196:3000/documents/export?format=${fmt}&search=${encodeURIComponent(doc.documentNumber ?? doc.id)}`
     const a = window.document.createElement('a')
     a.href = url
     a.download = `document-${doc.documentNumber ?? doc.id}.${fmt}`
@@ -213,10 +221,10 @@ const ArchivePage = () => {
                       </td>
                       <td onClick={e => e.stopPropagation()}>
                         <div className="actions-cell">
-                          <button className="action-icon-btn" title="Просмотр карточки" onClick={() => navigate(`/documents/${doc.id}`)}>👁️</button>
-                          <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}>📥</button>
-                          <button className="action-icon-btn" title={`Экспорт ${exportFormat}`} onClick={() => handleExport(doc)}>📄</button>
-                          <button className="action-icon-btn" title="История изменений">🕒</button>
+                          <button className="action-icon-btn" title="Просмотр карточки" onClick={() => navigate(`/documents/${doc.id}`)}><EyeOutlined /></button>
+                          <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-download w-4 h-4 text-gray-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg></button>
+                          <button className="action-icon-btn" title={`Экспорт ${exportFormat}`} onClick={() => handleExport(doc)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-json w-5 h-5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"></path><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"></path></svg></button>
+                          <button className="action-icon-btn" title="История изменений"><HistoryOutlined /></button>
                         </div>
                       </td>
                     </tr>
