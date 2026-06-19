@@ -109,16 +109,23 @@ export class DocumentsController {
     @Param('id') id: string,
     @Param('fieldKey') fieldKey: string,
     @Body('newValue') newValue: string,
+    @Body('userId') userId: string,
   ) {
     if (!newValue) {
       throw new BadRequestException('Необходимо передать новое значение поля');
     }
 
-    return this.documentsService.updateFields(id, fieldKey, newValue);
+    return this.documentsService.updateFields(id, fieldKey, newValue, userId);
   }
 
   @Post(':id/confirm')
-  async confirm(@Param('id') id: string) {
-    return this.documentsService.confirm(id);
+async confirm(
+  @Param('id') id: string,
+  @Body('userId') userId: string,
+) {
+  if (!userId) {
+    throw new BadRequestException('userId is required');
+  }
+  return this.documentsService.confirm(id, userId);
   }
 }

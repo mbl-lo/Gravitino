@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
+import { AuditService } from '../audit/audit.service';
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService) {}
-
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
   async create(files: any[], body: any) {
     const uploadedById = body?.uploadedById ?? '33333333-3333-4333-8333-333333333334';
     const createdDocuments = await Promise.all(
@@ -180,7 +182,8 @@ export class DocumentsService {
     return { ...ocr, savedFields: fields.length, status: 'processed', ocrStatus: 'completed' };
   }
 
-  async updateFields(documentId: string, fieldKey: string, newValue: string) {
+
+  async updateFields(documentId: string, fieldKey: string, newValue: string, userId: string) {
     await this.findOne(documentId);
 
     const updatedFields = await this.prisma.documentField.update({
@@ -193,10 +196,22 @@ export class DocumentsService {
       },
     });
 
+    await this.auditService.logAction({
+      userId,
+      entityType: 'Document',
+      entityId: documentId,
+      action: 'FIELD_UPDATED',
+      payload: {
+        fieldKey,
+        oldValue: updatedFields.recognizedValue,
+        newValue,
+      },
+    });
+
     return updatedFields;
   }
 
-  async confirm(id: string) {
+  async confirm(id: string, userId: string) {
     const document = await this.prisma.document.findUnique({
       where: { id },
       include: { anomalies: true },
@@ -216,12 +231,25 @@ export class DocumentsService {
       );
     }
 
-    return this.prisma.document.update({
+    const updated = await this.prisma.document.update({
       where: { id },
       data: {
         status: 'confirmed',
         confirmedAt: new Date(),
       },
     });
+
+    await this.auditService.logAction({
+      userId,
+      entityType: 'Document',
+      entityId: id,
+      action: 'CONFIRMED',
+      payload: {
+        documentId: id,
+        confirmedAt: new Date(),
+      },
+    });
+
+    return updated;
   }
 }
