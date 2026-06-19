@@ -8,6 +8,72 @@ interface RoleTemplate {
   color: string
 }
 
+type SystemIconName = 'shield' | 'file-text' | 'cpu' | 'users' | 'save'
+
+const SystemIcon = ({ name, size = 24, color = '#2563eb' }: { name: SystemIconName; size?: number; color?: string }) => {
+  const commonProps = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    style: { color, flexShrink: 0 },
+    'aria-hidden': true,
+  }
+
+  if (name === 'shield') {
+    return (
+      <svg {...commonProps}>
+        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      </svg>
+    )
+  }
+
+  if (name === 'file-text') {
+    return (
+      <svg {...commonProps}>
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+        <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+        <path d="M10 9H8" />
+        <path d="M16 13H8" />
+        <path d="M16 17H8" />
+      </svg>
+    )
+  }
+
+  if (name === 'cpu') {
+    return (
+      <svg {...commonProps}>
+        <rect width="16" height="16" x="4" y="4" rx="2" />
+        <rect width="6" height="6" x="9" y="9" rx="1" />
+        <path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" />
+      </svg>
+    )
+  }
+
+  if (name === 'users') {
+    return (
+      <svg {...commonProps}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg {...commonProps}>
+      <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+      <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+    </svg>
+  )
+}
+
 const SettingsPage = () => {
   const [maxFuelDeviation, setMaxFuelDeviation] = useState(5)
   const [maxWorkingHours, setMaxWorkingHours] = useState(12)
@@ -114,7 +180,7 @@ const SettingsPage = () => {
       <div style={styles.layoutContainer}>
         <div style={styles.mainColumn}>
           <div style={styles.card}>
-            <h3 style={styles.cardTitle}>🛡️ Правила валидации</h3>
+            <h3 style={styles.cardTitle}><SystemIcon name="shield" />Правила валидации</h3>
             <div style={styles.formGroupRow}>
               <div style={styles.labelCell}>
                 <span style={styles.inputLabel}>Макс. отклонение расхода топлива</span>
@@ -160,7 +226,7 @@ const SettingsPage = () => {
             </div>
           </div>
           <div style={styles.card}>
-            <h3 style={styles.cardTitle}>📄 Поля документа</h3>
+            <h3 style={styles.cardTitle}><SystemIcon name="file-text" />Поля документа</h3>
             <p style={styles.sectionDesc}>Выберите поля путевого листа, подлежащие обязательному распознаванию и верификации</p>
             <div style={styles.fieldsGrid}>
               {[
@@ -178,7 +244,7 @@ const SettingsPage = () => {
             </div>
           </div>
           <div style={styles.card}>
-            <h3 style={styles.cardTitle}>⚙️ OCR и ИИ</h3>
+            <h3 style={styles.cardTitle}><SystemIcon name="cpu" />OCR и ИИ</h3>
             <div style={styles.verticalFormGroup}>
               <label style={styles.inputLabel}>Режим распознавания</label>
               <select value={ocrMode} onChange={e => setOcrMode(e.target.value)} style={styles.select}>
@@ -208,7 +274,7 @@ const SettingsPage = () => {
         </div>
         <div style={styles.sideColumn}>
           <div style={styles.card}>
-            <h3 style={styles.cardTitle}>👥 Пользователи и роли</h3>
+            <h3 style={styles.cardTitle}><SystemIcon name="users" />Пользователи и роли</h3>
             {isLoadingUsers ? (
               <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '12px' }}>Подсчет сотрудников...</div>
             ) : (
@@ -229,7 +295,7 @@ const SettingsPage = () => {
             )}
           </div>
           <div style={styles.card}>
-            <h3 style={styles.cardTitle}>🔒 Безопасность</h3>
+            <h3 style={styles.cardTitle}><SystemIcon name="shield" />Безопасность</h3>
             <div style={styles.verticalFormGroup}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <input type="checkbox" id="auditLog" checked={auditLog} onChange={() => setAuditLog(!auditLog)} style={styles.checkbox} />
@@ -257,7 +323,7 @@ const SettingsPage = () => {
       </div>
       <div style={styles.bottomBar}>
         <button onClick={handleSave} disabled={isSaving} style={styles.saveButton}>
-          {isSaving ? 'Сохранение...' : '💾 Сохранить изменения'}
+          {isSaving ? 'Сохранение...' : <><SystemIcon name="save" size={20} color="currentColor" />Сохранить изменения</>}
         </button>
       </div>
     </div>
@@ -273,7 +339,7 @@ const styles = {
   mainColumn: { flex: '1.4', minWidth: '400px', display: 'flex', flexDirection: 'column' as const, gap: '24px' },
   sideColumn: { flex: '1', minWidth: '350px', display: 'flex', flexDirection: 'column' as const, gap: '24px' },
   card: { backgroundColor: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' },
-  cardTitle: { fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: '0 0 20px 0', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' },
+  cardTitle: { display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: '0 0 20px 0', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' },
   sectionDesc: { fontSize: '13px', color: '#64748b', marginTop: '-12px', marginBottom: '20px' },
   formGroupRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #f1f5f9' },
   labelCell: { display: 'flex', flexDirection: 'column' as const, gap: '4px', flex: 1, paddingRight: '16px' },
@@ -297,7 +363,7 @@ const styles = {
   roleDesc: { fontSize: '11px', color: '#64748b' },
   roleCountBadge: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', minWidth: '90px' },
   bottomBar: { position: 'fixed' as const, bottom: 0, left: '260px', right: 0, height: '70px', backgroundColor: 'white', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: '32px', zIndex: 10 },
-  saveButton: { padding: '10px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' },
+  saveButton: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' },
   alertSuccess: { padding: '12px 16px', backgroundColor: '#ecfdf5', color: '#059669', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', border: '1px solid #a7f3d0' }
 }
 
