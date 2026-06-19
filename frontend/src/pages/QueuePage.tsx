@@ -54,9 +54,17 @@ const getFieldValue = (fields: DocumentField[] | undefined, key: string) => {
   return field?.correctedValue || field?.recognizedValue || '—'
 }
 
+const abbreviateName = (fullName: string) => {
+  if (fullName === '—') return fullName
+  const [lastName, firstName, middleName] = fullName.trim().split(/\s+/)
+  if (!firstName) return lastName
+  const initials = [firstName, middleName].filter(Boolean).map(part => `${part[0]}.`).join('')
+  return `${lastName} ${initials}`
+}
+
 const formatDate = (doc: QueueRow) => {
   const recognizedDate = getFieldValue(doc.fields, 'date')
-  if (recognizedDate !== '—') return recognizedDate
+  if (recognizedDate !== '—') return new Date(recognizedDate).toLocaleDateString('ru-RU')
   if (doc.tripDate) return new Date(doc.tripDate).toLocaleDateString('ru-RU')
   if (doc.createdAt) return new Date(doc.createdAt).toLocaleDateString('ru-RU')
   return '—'
@@ -231,7 +239,7 @@ const QueuePage = () => {
           <table className="queue-table">
             <thead>
               <tr>
-                <th>ID документа</th>
+                <th>ID документа</th> 
                 <th>Фото/скан</th>
                 <th>Водитель</th>
                 <th>Автомобиль</th>
@@ -271,7 +279,7 @@ const QueuePage = () => {
                           <FileImageOutlined />
                         </div>
                       </td>
-                      <td className="queue-primary-cell">{getFieldValue(doc.fields, 'driver_name')}</td>
+                      <td className="queue-primary-cell">{abbreviateName(getFieldValue(doc.fields, 'driver_name'))}</td>
                       <td className="queue-vehicle-cell">{getFieldValue(doc.fields, 'vehicle_plate')}</td>
                       <td className="queue-muted-cell">{formatDate(doc)}</td>
                       <td>

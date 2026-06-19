@@ -179,9 +179,13 @@ export class DocumentsService {
     }
 
     if (filters?.fromDate || filters?.toDate) {
-      where.createdAt = {};
-      if (filters.fromDate) where.createdAt.gte = filters.fromDate;
-      if (filters.toDate) where.createdAt.lte = filters.toDate;
+      where.tripDate = {};
+      if (filters.fromDate) where.tripDate.gte = filters.fromDate;
+      if (filters.toDate) {
+        const endOfDay = new Date(filters.toDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        where.tripDate.lte = endOfDay;
+      }
     }
 
     return where;
@@ -264,7 +268,12 @@ export class DocumentsService {
       ),
       this.prisma.document.update({
         where: { id },
-        data: { ocrStatus: 'completed', ocrConfidence: confidence, status: 'processed' },
+        data: {
+          ocrStatus: 'completed',
+          ocrConfidence: confidence,
+          status: 'processed',
+          tripDate: ocr.date ? new Date(ocr.date) : undefined,
+        },
       }),
     ]);
 

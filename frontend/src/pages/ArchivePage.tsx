@@ -43,7 +43,7 @@ const ArchivePage = () => {
 
 useEffect(() => {
   loadDocumentsRef.current()
-}, [])
+}, [loadDocuments])
 
 const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
@@ -69,7 +69,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
       const driver = getField(doc, 'driver_name').toLowerCase()
       const plate = getField(doc, 'vehicle_plate').toLowerCase()
       const model = getField(doc, 'vehicle_model').toLowerCase()
-      const docNum = (doc.documentNumber ?? '').toLowerCase()
+      const docNum = getField(doc, 'document_number').toLowerCase()
       const fileName = (doc.originalFileName ?? '').toLowerCase()
 
       return (
