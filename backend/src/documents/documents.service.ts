@@ -46,9 +46,25 @@ export class DocumentsService {
     const where: any = {};
 
     if (filters?.search) {
+      const searchString = filters.search.trim();
       where.OR = [
         { originalFileName: { contains: filters.search, mode: 'insensitive' } },
         { documentNumber: { contains: filters.search, mode: 'insensitive' } },
+        ...(searchString.length >= 8 ? [{ id: { contains: searchString, mode: 'insensitive' } }] : []),
+        {
+          fields: {
+            some: {
+              recognizedValue: { contains: searchString, mode: 'insensitive' }
+            }
+          }
+        },
+        {
+          fields: {
+            some: {
+              correctedValue: { contains: searchString, mode: 'insensitive' }
+            }
+          }
+        }
       ];
     }
 

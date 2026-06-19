@@ -1,20 +1,54 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BellOutlined, SearchOutlined } from '@ant-design/icons'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { BellOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext';
 
 const Header = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchQuery, setSearchQuery] = useState('')
   const nameParts = user?.fullName?.trim().split(' ').filter(Boolean) ?? []
   const displayName = nameParts.length >= 2 ? `${nameParts[1]} ${nameParts[0]}` : user?.fullName || 'Оператор Иванов'
   const initials = nameParts.length >= 2 ? (nameParts[1][0] + nameParts[0][0]).toUpperCase() : nameParts[0]?.[0]?.toUpperCase() || 'ОИ'
+  const [previousPage, setPreviousPage] = useState('/dashboard')
+
+  useEffect(() => {
+    if (location.pathname !== '/archive') {
+      setPreviousPage(location.pathname)
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (!params.get('search')) {
+      setSearchQuery('')
+    }
+  }, [location.search])
+
+  const executeSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed) {
+      navigate(`/archive?search=${encodeURIComponent(trimmed)}`);
+    } else {
+      navigate(previousPage);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Поиск:', searchQuery)
+    executeSearch(searchQuery);
   }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeSearch(searchQuery);
+    }
+  };
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    navigate(previousPage)
+  };
 
   const handleNotifications = () => {
     console.log('Уведомления')
@@ -36,7 +70,14 @@ const Header = () => {
             style={styles.searchInput}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
+          {searchQuery && (
+            <CloseOutlined 
+              onClick={handleClearSearch} 
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', cursor: 'pointer' }} 
+            />
+          )}
         </form>
       </div>
 

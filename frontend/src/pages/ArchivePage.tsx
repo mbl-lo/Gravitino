@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
 
 const ArchivePage = () => {
   const navigate = useNavigate()
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const globalSearch = searchParams.get('search') || ''
 
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
@@ -17,11 +20,11 @@ const ArchivePage = () => {
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true)
-    try {
-      const filters: any = {}
+    try {const filters: any = {}
       if (fromDate) filters.fromDate = fromDate
       if (toDate) filters.toDate = toDate
       if (onlyAnomalies) filters.hasAnomalies = true
+      if (globalSearch) filters.search = globalSearch 
 
       const data = await documentsService.getDocumentsList(filters)
       setDocuments(data)
@@ -30,7 +33,7 @@ const ArchivePage = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [fromDate, toDate, onlyAnomalies])
+  }, [fromDate, toDate, onlyAnomalies, globalSearch])
 
   useEffect(() => {
     loadDocuments()
@@ -43,6 +46,7 @@ const ArchivePage = () => {
     setVehicleSearch('')
     setDivisionFilter('all')
     setOnlyAnomalies(false)
+    setSearchParams({})
   }
 
   const getField = (doc: Document, key: string): string => {
@@ -52,6 +56,23 @@ const ArchivePage = () => {
   }
 
   const filteredDocuments = documents.filter(doc => {
+    if (globalSearch.trim()) {
+      const searchLower = globalSearch.toLowerCase()
+      const driver = getField(doc, 'driver_name').toLowerCase()
+      const plate = getField(doc, 'vehicle_plate').toLowerCase()
+      const model = getField(doc, 'vehicle_model').toLowerCase()
+      const docNum = (doc.documentNumber ?? '').toLowerCase()
+      const fileName = (doc.originalFileName ?? '').toLowerCase()
+
+      return (
+        driver.includes(searchLower) ||
+        plate.includes(searchLower) ||
+        model.includes(searchLower) ||
+        docNum.includes(searchLower) ||
+        fileName.includes(searchLower)
+      )
+    }
+
     if (divisionFilter !== 'all') {
       const div = getField(doc, 'division').toLowerCase()
       if (!div.includes(divisionFilter.toLowerCase())) return false
@@ -65,6 +86,7 @@ const ArchivePage = () => {
       const model = getField(doc, 'vehicle_model').toLowerCase()
       if (!plate.includes(vehicleSearch.toLowerCase()) && !model.includes(vehicleSearch.toLowerCase())) return false
     }
+    
     return true
   })
 
