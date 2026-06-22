@@ -7,6 +7,7 @@ import {
   StreamableFile,
   Res,
   UseInterceptors,
+  UseGuards,
   UploadedFiles,
   Body,
   BadRequestException,
@@ -21,6 +22,8 @@ import { Response } from 'express';
 import { diskStorage } from 'multer';
 import { OcrService } from './ocr.service';
 import { AnomaliesService } from '../anomalies/anomalies.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('documents')
 export class DocumentsController {
@@ -144,8 +147,9 @@ export class DocumentsController {
   }
 
   @Post(':id/confirm')
-  async confirm(@Param('id') id: string) {
-    return this.documentsService.confirm(id);
+  @UseGuards(JwtAuthGuard)
+  async confirm(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.documentsService.confirm(id, user.id);
   }
 
   @Get(':id')
@@ -183,16 +187,18 @@ export class DocumentsController {
   }
 
   @Patch(':id/fields/:fieldKey')
+  @UseGuards(JwtAuthGuard)
   async updateDocumentFields(
     @Param('id') id: string,
     @Param('fieldKey') fieldKey: string,
     @Body('value') value: string,
+    @CurrentUser() user: any,
   ) {
     if (value === undefined) {
       throw new BadRequestException('Необходимо передать новое значение поля');
     }
 
-    return this.documentsService.updateFields(id, fieldKey, value);
+    return this.documentsService.updateFields(id, fieldKey, value, user.id);
   }
 
   @Post(':id/validate')

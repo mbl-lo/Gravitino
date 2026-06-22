@@ -4,9 +4,10 @@ import { DocumentsService } from './documents.service';
 import { OcrService } from './ocr.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AnomaliesModule } from '../anomalies/anomalies.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [AnomaliesModule],
+  imports: [AnomaliesModule, AuditModule],
   controllers: [DocumentsController],
   providers: [DocumentsService, OcrService, PrismaService],
 })
