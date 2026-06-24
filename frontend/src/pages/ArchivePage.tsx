@@ -2,7 +2,22 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
 import { HistoryOutlined, EyeOutlined } from '@ant-design/icons';
+import { getAuditDocumentHistory } from '../audit/document-history';
+interface AuditEntry {
+  id: string
+  action: string
+  fieldKey?: string
+  oldValue?: string
+  newValue?: string
+  userName?: string
+  createdAt: string
+}
 
+const actionLabels: Record<string, string> = {
+  FIELD_UPDATED: 'Поле изменено',
+  DOCUMENT_CONFIRMED: 'Документ подтверждён',
+  DOCUMENT_CREATED: 'Документ создан',
+}
 
 const ArchivePage = () => {
   const navigate = useNavigate()
@@ -19,6 +34,10 @@ const ArchivePage = () => {
   const [divisionFilter, setDivisionFilter] = useState('all')
   const [exportFormat, setExportFormat] = useState('JSON')
   const [onlyAnomalies, setOnlyAnomalies] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
+const [auditLoading, setAuditLoading] = useState(false)
+const [selectedDocNumber, setSelectedDocNumber] = useState('')
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true)
@@ -111,6 +130,19 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
     a.download = `document-${doc.documentNumber ?? doc.id}.${fmt}`
     a.click()
   }
+  
+  const handleHistoryChange = async (documentId: Document['id']) => {
+  setModalOpen(true)
+  setAuditLoading(true)
+  try {
+    const data = await getAuditDocumentHistory(documentId)
+    setAuditEntries(data || [])
+  } catch {
+    setAuditEntries([])
+  } finally {
+    setAuditLoading(false)
+  }
+}
 
   return (
     <div className="archive-page">
@@ -224,7 +256,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
                           <button className="action-icon-btn" title="Просмотр карточки" onClick={() => navigate(`/documents/${doc.id}`)}><EyeOutlined /></button>
                           <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-download w-4 h-4 text-gray-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg></button>
                           <button className="action-icon-btn" title={`Экспорт ${exportFormat}`} onClick={() => handleExport(doc)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-json w-5 h-5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"></path><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"></path></svg></button>
-                          <button className="action-icon-btn" title="История изменений"><HistoryOutlined /></button>
+                          <button className="action-icon-btn" title="История изменений" onClick={() => handleHistoryChange(doc.id)}><HistoryOutlined /></button>
                         </div>
                       </td>
                     </tr>
@@ -234,6 +266,46 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
             </table>
           </div>
         )}
+        {modalOpen && (
+  <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+    <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2>История изменений: {selectedDocNumber}</h2>
+      </div>
+      <div className="modal-body">
+        {auditLoading ? (
+          <p className="modal-loading">Загрузка...</p>
+        ) : auditEntries.length === 0 ? (
+          <p className="modal-empty">История изменений пуста</p>
+        ) : (
+          <ul className="audit-list">
+            {auditEntries.map(entry => (
+              <li key={entry.id} className="audit-item">
+                <div className="audit-header">
+                  <span className="audit-action">{actionLabels[entry.action] || entry.action}</span>
+                  <span className="audit-date">{new Date(entry.createdAt).toLocaleString('ru-RU')}</span>
+                </div>
+                {entry.userName && (
+                  <div className="audit-user">Пользователь: {entry.userName}</div>
+                )}
+                {entry.action === 'FIELD_UPDATED' && entry.fieldKey && (
+                  <div className="audit-diff">
+                    <span className="audit-field">Поле: {entry.fieldKey}</span>
+                    <div className="audit-values">
+                      <span className="audit-old">{entry.oldValue || '(пусто)'}</span>
+                      <span className="audit-arrow">→</span>
+                      <span className="audit-new">{entry.newValue || '(пусто)'}</span>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  </div>
+)}
       </div>
 
       <style>{`
@@ -279,7 +351,26 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .action-icon-btn:hover { opacity: 1; transform: scale(1.15); }
         
         .loading-state, .empty-state { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; font-size: 14px; }
-      `}</style>
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: white; border-radius: 16px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
+.modal-header h2 { margin: 0; font-size: 18px; color: #101828; }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-loading, .modal-empty { text-align: center; color: #64748b; padding: 24px; }
+.audit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+.audit-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+.audit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.audit-action { font-weight: 600; color: #1e293b; }
+.audit-date { font-size: 12px; color: #94a3b8; }
+.audit-user { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+.audit-diff { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+.audit-field { font-size: 12px; color: #64748b; display: block; margin-bottom: 4px; }
+.audit-values { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.audit-old { background: #fef2f2; color: #dc2626; padding: 2px 8px; border-radius: 4px; text-decoration: line-through; }
+.audit-arrow { color: #94a3b8; }
+.audit-new { background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 4px; }
+      `}
+      </style>
     </div>
   )
 }
