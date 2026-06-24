@@ -355,6 +355,7 @@ const AnomaliesPage = () => {
           padding-top: 8px;
           padding-bottom: 32px;
           box-sizing: border-box;
+          overflow-x: hidden;
         }
 
         .container {
@@ -363,6 +364,7 @@ const AnomaliesPage = () => {
           max-width: none !important;
           padding: 0 8px;
           box-sizing: border-box;
+          min-width: 0;
         }
 
         /* Header */
@@ -379,10 +381,14 @@ const AnomaliesPage = () => {
           margin: 0;
         }
 
+        .page-header p {
+          max-width: 840px;
+        }
+
         /* Stats Grid */
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 16px;
           margin-bottom: 28px;
         }
@@ -395,7 +401,9 @@ const AnomaliesPage = () => {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
+          gap: 12px;
           transition: all 0.2s;
+          min-width: 0;
         }
 
         .stat-card:hover {
@@ -414,6 +422,7 @@ const AnomaliesPage = () => {
           font-size: 13px;
           color: #64748b;
           margin-top: 4px;
+          overflow-wrap: anywhere;
         }
 
         .stat-icon {
@@ -446,7 +455,8 @@ const AnomaliesPage = () => {
           padding: 16px 20px;
           display: flex;
           flex-wrap: wrap;
-          gap: 24px;
+          gap: 16px;
+          align-items: flex-end;
           margin-bottom: 24px;
         }
 
@@ -454,6 +464,8 @@ const AnomaliesPage = () => {
           display: flex;
           flex-direction: column;
           gap: 6px;
+          flex: 1 1 180px;
+          min-width: 0;
         }
 
         .filter-group label {
@@ -466,12 +478,14 @@ const AnomaliesPage = () => {
 
         .filter-group select,
         .filter-group input {
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
           padding: 8px 32px 8px 12px;
           border: 1px solid #cbd5e1;
           border-radius: 8px;
           font-size: 13px;
           background: white;
-          min-width: 160px;
           cursor: pointer;
         }
 
@@ -490,6 +504,8 @@ const AnomaliesPage = () => {
 
         .apply-btn {
           align-self: flex-end;
+          min-height: 35px;
+          flex: 0 0 auto;
           padding: 9px 20px;
           background: #2563eb;
           color: white;
@@ -509,6 +525,7 @@ const AnomaliesPage = () => {
           display: flex;
           gap: 24px;
           align-items: flex-start;
+          min-width: 0;
         }
 
         .results-layout .table-wrapper {
@@ -518,12 +535,13 @@ const AnomaliesPage = () => {
 
         .detail-panel {
           flex: 1;
-          min-width: 300px;
+          min-width: 280px;
           max-width: 360px;
           background: white;
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           padding: 24px;
+          box-sizing: border-box;
         }
 
         .detail-empty {
@@ -545,6 +563,7 @@ const AnomaliesPage = () => {
           flex-direction: column;
           gap: 4px;
           margin-bottom: 16px;
+          min-width: 0;
         }
 
         .detail-label {
@@ -561,6 +580,7 @@ const AnomaliesPage = () => {
           cursor: pointer;
           padding: 0;
           text-align: left;
+          overflow-wrap: anywhere;
         }
 
         .detail-doc-link:hover {
@@ -574,6 +594,7 @@ const AnomaliesPage = () => {
           border-radius: 10px;
           padding: 12px 16px;
           margin-bottom: 12px;
+          overflow-wrap: anywhere;
         }
 
         .detail-box-danger {
@@ -604,6 +625,8 @@ const AnomaliesPage = () => {
         }
 
         .detail-btn {
+          width: 100%;
+          min-height: 42px;
           padding: 12px;
           border-radius: 10px;
           font-size: 14px;
@@ -630,14 +653,17 @@ const AnomaliesPage = () => {
 
         /* Table */
         .table-wrapper {
+          max-width: 100%;
           background: white;
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           overflow-x: auto;
+          overflow-y: hidden;
         }
 
         .anomalies-table {
           width: 100%;
+          min-width: 820px;
           border-collapse: collapse;
           font-size: 14px;
         }
@@ -655,12 +681,25 @@ const AnomaliesPage = () => {
           font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          white-space: nowrap;
         }
 
         .anomalies-table td {
           padding: 14px 16px;
           border-bottom: 1px solid #f1f5f9;
           color: #334155;
+          vertical-align: middle;
+        }
+
+        .anomalies-table td:first-child,
+        .anomalies-table td:nth-child(4),
+        .anomalies-table td:nth-child(5) {
+          white-space: nowrap;
+        }
+
+        .anomalies-table td:nth-child(2),
+        .anomalies-table td:nth-child(3) {
+          min-width: 180px;
         }
 
         .anomalies-table tbody tr {
@@ -686,6 +725,7 @@ const AnomaliesPage = () => {
           cursor: pointer;
           padding: 0;
           transition: color 0.2s;
+          white-space: nowrap;
         }
 
         .document-link:hover {
@@ -702,6 +742,7 @@ const AnomaliesPage = () => {
           border-radius: 20px;
           font-size: 11px;
           font-weight: 500;
+          white-space: nowrap;
         }
 
         .severity-critical {
@@ -731,6 +772,7 @@ const AnomaliesPage = () => {
           border-radius: 20px;
           font-size: 11px;
           font-weight: 500;
+          white-space: nowrap;
         }
 
         .status-open {
@@ -778,38 +820,81 @@ const AnomaliesPage = () => {
 
         /* Responsive */
         @media (max-width: 1200px) {
-          .stats-grid {
-            grid-template-columns: repeat(4, 1fr);
+          .results-layout {
+            flex-direction: column;
+          }
+
+          .results-layout .table-wrapper,
+          .detail-panel {
+            width: 100%;
+            max-width: none;
           }
         }
 
         @media (max-width: 900px) {
           .container {
-            padding: 0 16px;
+            padding: 0 8px;
           }
           
           .stats-grid {
             grid-template-columns: repeat(2, 1fr);
           }
+
+          .filters-bar {
+            gap: 12px;
+          }
         }
 
         @media (max-width: 768px) {
+          .page-header h1 {
+            font-size: 24px;
+          }
+
+          .stats-grid {
+            gap: 12px;
+            margin-bottom: 20px;
+          }
+
+          .stat-card {
+            border-radius: 12px;
+            padding: 16px;
+          }
+
+          .stat-value {
+            font-size: 26px;
+          }
+
           .filters-bar {
             flex-direction: column;
             gap: 12px;
+            padding: 14px;
           }
           
-          .filter-group select,
-          .filter-group input {
+          .filter-group,
+          .apply-btn {
             width: 100%;
           }
           
-          .table-wrapper {
-            overflow-x: auto;
+          .detail-panel {
+            padding: 18px;
           }
-          
-          .anomalies-table {
-            min-width: 700px;
+        }
+
+        @media (max-width: 480px) {
+          .container {
+            padding: 0 4px;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .stat-card {
+            align-items: center;
+          }
+
+          .empty-state {
+            padding: 32px 16px;
           }
         }
       `}</style>
