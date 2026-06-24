@@ -19,10 +19,13 @@ const ArchivePage = () => {
   const [divisionFilter, setDivisionFilter] = useState('all')
   const [exportFormat, setExportFormat] = useState('JSON')
   const [onlyAnomalies, setOnlyAnomalies] = useState(false)
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const resetPage = () => setCurrentPage(1)
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true)
-    try {const filters: any = {}
+    try {const filters: { search?: string; hasAnomalies?: boolean; fromDate?: string; toDate?: string } = {}
       if (fromDate) filters.fromDate = fromDate
       if (toDate) filters.toDate = toDate
       if (onlyAnomalies) filters.hasAnomalies = true
@@ -54,6 +57,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
     setVehicleSearch('')
     setDivisionFilter('all')
     setOnlyAnomalies(false)
+    resetPage()
     setSearchParams({})
   }
 
@@ -98,6 +102,15 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
     return true
   })
 
+  const totalPages = Math.max(1, Math.ceil(filteredDocuments.length / pageSize))
+  const activePage = Math.min(currentPage, totalPages)
+  const paginatedDocuments = filteredDocuments.slice((activePage - 1) * pageSize, activePage * pageSize)
+  const paginationPages = Array.from({ length: Math.min(totalPages, 4) }, (_, index) => {
+    if (totalPages <= 4 || activePage <= 3) return index + 1
+    if (activePage >= totalPages - 2) return totalPages - 3 + index
+    return activePage - 1 + index
+  })
+
   const handleDownloadFile = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     window.open(documentsService.getFileUrl(id), '_blank')
@@ -126,23 +139,23 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
           <div className="filters-grid">
             <div className="filter-item">
               <label>Дата от</label>
-              <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+              <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); resetPage() }} />
             </div>
             <div className="filter-item">
               <label>Дата до</label>
-              <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+              <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); resetPage() }} />
             </div>
             <div className="filter-item">
               <label>Водитель</label>
-              <input type="text" placeholder="ФИО водителя" value={driverSearch} onChange={e => setDriverSearch(e.target.value)} />
+              <input type="text" placeholder="ФИО водителя" value={driverSearch} onChange={e => { setDriverSearch(e.target.value); resetPage() }} />
             </div>
             <div className="filter-item">
               <label>Номер автомобиля</label>
-              <input type="text" placeholder="Госномер" value={vehicleSearch} onChange={e => setVehicleSearch(e.target.value)} />
+              <input type="text" placeholder="Госномер" value={vehicleSearch} onChange={e => { setVehicleSearch(e.target.value); resetPage() }} />
             </div>
             <div className="filter-item">
               <label>Подразделение</label>
-              <select value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}>
+              <select value={divisionFilter} onChange={e => { setDivisionFilter(e.target.value); resetPage() }}>
                 <option value="all">Все подразделения</option>
                 <option value="Центральный парк">Центральный парк</option>
               </select>
@@ -158,7 +171,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
           </div>
           <div className="search-actions">
             <label className="checkbox-container">
-              <input type="checkbox" checked={onlyAnomalies} onChange={e => setOnlyAnomalies(e.target.checked)} />
+              <input type="checkbox" checked={onlyAnomalies} onChange={e => { setOnlyAnomalies(e.target.checked); resetPage() }} />
               <span>Только с аномалиями</span>
             </label>
             <div className="btn-group">
@@ -187,7 +200,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
                 </tr>
               </thead>
               <tbody>
-                {filteredDocuments.map(doc => {
+                {paginatedDocuments.map(doc => {
                   const docNum = getField(doc, 'document_number')
                   const tripDate = getField(doc, 'date')
                   const driver = getField(doc, 'driver_name')
@@ -232,6 +245,32 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
                 })}
               </tbody>
             </table>
+            <div className="pagination-bar">
+              <div className="pagination-size">
+                <span>Строк на странице:</span>
+                <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); resetPage() }}>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              <div className="pagination-controls">
+                <button type="button" className="pagination-button" disabled={activePage === 1} onClick={() => setCurrentPage(Math.max(1, activePage - 1))}>Назад</button>
+                {paginationPages.map(page => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`pagination-button ${page === activePage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+                {paginationPages[paginationPages.length - 1] < totalPages && <span className="pagination-ellipsis">...</span>}
+                <button type="button" className="pagination-button" disabled={activePage === totalPages} onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}>Вперед</button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -266,6 +305,16 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .archive-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         .archive-table tbody tr { cursor: pointer; transition: background 0.15s; }
         .archive-table tbody tr:hover { background-color: #f8fafc; }
+
+        .pagination-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 16px; border-top: 1px solid #e2e8f0; background: white; }
+        .pagination-size, .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-size span { font-size: 14px; color: #4b5563; }
+        .pagination-size select { padding: 4px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; color: #334155; }
+        .pagination-button { padding: 4px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: white; color: #334155; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+        .pagination-button:hover:not(:disabled):not(.active) { background: #f9fafb; }
+        .pagination-button.active { background: #2563eb; color: white; border-color: #2563eb; font-weight: 600; }
+        .pagination-button:disabled { color: #94a3b8; cursor: default; opacity: 0.7; }
+        .pagination-ellipsis { padding: 0 8px; color: #9ca3af; }
         
         .doc-id-cell { color: #2563eb; font-weight: 600; }
         .accuracy-tag { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
@@ -279,6 +328,10 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .action-icon-btn:hover { opacity: 1; transform: scale(1.15); }
         
         .loading-state, .empty-state { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; font-size: 14px; }
+        @media (max-width: 768px) {
+          .pagination-bar { align-items: flex-start; flex-direction: column; }
+          .pagination-controls { flex-wrap: wrap; }
+        }
       `}</style>
     </div>
   )
