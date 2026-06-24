@@ -332,7 +332,7 @@ export class DocumentsService {
     }
 
     const criticalAnomalies = document.anomalies.filter(
-      (a) => (a.severity === 'high' || a.severity === 'critical') && a.status === 'open',
+      (a) => a.severity === 'critical' && a.status === 'open',
     );
 
     if (criticalAnomalies.length > 0) {

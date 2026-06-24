@@ -20,14 +20,12 @@ interface BackendAnomaly {
 
 const SEVERITY_MAP: Record<string, string> = {
   critical: 'severity-critical',
-  high: 'severity-high',
   medium: 'severity-medium',
   low: 'severity-low',
 };
 
 const SEVERITY_TEXT: Record<string, string> = {
   critical: 'Критическая',
-  high: 'Высокая',
   medium: 'Средняя',
   low: 'Низкая',
 };
@@ -106,7 +104,7 @@ const AnomaliesPage = () => {
     return true;
   });
 
-  const anomalyTypes = Array.from(new Set(anomalies.map(a => a.type).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+  const anomalyTypes = ['Несоответствие пробега', 'Расход топлива', 'Отсутствует подпись'];
   const selectedAnomaly = filtered.find(a => a.id === selectedId) || null;
 
   // Подсчет статистики (только для активных аномалий)
@@ -200,7 +198,6 @@ const AnomaliesPage = () => {
             <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)}>
               <option value="all">Все</option>
               <option value="critical">Критические</option>
-              <option value="high">Высокие</option>
               <option value="medium">Средние</option>
               <option value="low">Низкие</option>
             </select>
@@ -680,17 +677,17 @@ const AnomaliesPage = () => {
 
         .anomalies-table th:nth-child(2),
         .anomalies-table td:nth-child(2) {
-          width: 34%;
+          width: 28%;
         }
 
         .anomalies-table th:nth-child(3),
         .anomalies-table td:nth-child(3) {
-          width: 22%;
+          width: 20%;
         }
 
         .anomalies-table th:nth-child(4),
         .anomalies-table td:nth-child(4) {
-          width: 15%;
+          width: 23%;
         }
 
         .anomalies-table th:nth-child(5),

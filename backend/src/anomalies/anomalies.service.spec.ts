@@ -114,7 +114,7 @@ describe('AnomaliesService', () => {
     });
     expect(prisma.document.update).toHaveBeenCalledWith({
       where: { id: 'document-id' },
-      data: { hasAnomalies: true },
+      data: { hasAnomalies: true, status: 'needs_review' },
     });
   });
 
@@ -148,9 +148,10 @@ describe('AnomaliesService', () => {
     expect(prisma.anomaly.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         type: 'fuel_overrun',
+        severity: 'critical',
         fieldKey: 'fuel_used_liters',
-        expectedValue: '<= 24',
-        actualValue: '40',
+        expectedValue: '±20%',
+        actualValue: '+100%',
       }),
     });
   });
@@ -197,11 +198,11 @@ describe('AnomaliesService', () => {
     });
     expect(prisma.document.update).toHaveBeenCalledWith({
       where: { id: 'document-id' },
-      data: { hasAnomalies: false },
+      data: { hasAnomalies: false, status: 'processed' },
     });
   });
 
-  it('creates a critical signature anomaly when a required signature is missing', async () => {
+  it('creates a low-severity signature anomaly when one required signature is missing', async () => {
     prisma.document.findUnique.mockResolvedValue({
       id: 'document-id',
       fields: [
@@ -253,9 +254,9 @@ describe('AnomaliesService', () => {
     expect(prisma.anomaly.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         type: 'missing_signature',
-        severity: 'critical',
+        severity: 'low',
         fieldKey: 'signatures',
-        actualValue: 'signature_mechanic',
+        actualValue: 'Не распознана: Подпись механика',
       }),
     });
   });
@@ -309,7 +310,7 @@ describe('AnomaliesService', () => {
     expect(prisma.anomaly.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         type: 'time_invalid',
-        severity: 'high',
+        severity: 'critical',
         fieldKey: 'arrival_time',
       }),
     });

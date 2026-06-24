@@ -284,7 +284,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
         .search-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
         .section-title { font-size: 14px; font-weight: 600; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
-        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .filters-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
         .filter-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
         .filter-item label { font-size: 12px; font-weight: 500; color: #475569; }
         .filter-item input, .filter-item select { width: 100%; min-width: 0; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background-color: white; outline: none; }
@@ -354,7 +354,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
           .archive-container { padding: 0 4px; }
           .page-header h1 { font-size: 24px; }
           .search-card { border-radius: 12px; padding: 14px; }
-          .filters-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+          .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
           .search-actions { align-items: stretch; flex-direction: column; }
           .btn-group, .btn { width: 100%; }
           .pagination-bar { align-items: flex-start; flex-direction: column; }

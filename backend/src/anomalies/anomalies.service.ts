@@ -250,10 +250,17 @@ export class AnomaliesService {
 
     const deviationPercent = ((fuelUsed - expectedFuel) / expectedFuel) * 100;
 
+    const severity =
+      fuelUsed > expectedFuel * 1.5
+        ? 'critical'
+        : fuelUsed > expectedFuel * 1.2
+          ? 'medium'
+          : 'low';
+
     return {
       validationRuleId,
       type: 'fuel_overrun',
-      severity: fuelUsed > expectedFuel * 1.5 ? 'critical' : 'medium',
+      severity,
       fieldKey: 'fuel_used_liters',
       message: 'fuel consumption exceeds the basic allowed limit',
       expectedValue: `±${maxFuelDeviationPercent}%`,
@@ -297,10 +304,17 @@ export class AnomaliesService {
       return null;
     }
 
+    const severity =
+      missing.length >= requiredSignatures.length
+        ? 'critical'
+        : missing.length > 1
+          ? 'medium'
+          : 'low';
+
     return {
       validationRuleId,
       type: 'missing_signature',
-      severity: 'critical',
+      severity,
       fieldKey: 'signatures',
       message: 'required signatures are missing or not recognized',
       expectedValue: 'Все подписи распознаны',
@@ -463,6 +477,9 @@ export class AnomaliesService {
 
   async getAllAnomalies() {
     const anomalies = await this.prisma.anomaly.findMany({
+      where: {
+        type: { in: ['odometer_order', 'fuel_overrun', 'missing_signature'] },
+      },
       include: {
         document: {
           include: {
@@ -491,7 +508,7 @@ export class AnomaliesService {
 
     const typeLabels: Record<string, string> = {
       odometer_order: 'Несоответствие пробега',
-      fuel_overrun: 'Расход топлива выше нормы',
+      fuel_overrun: 'Расход топлива',
       missing_signature: 'Отсутствует подпись',
       time_invalid: 'Неверный временной интервал',
     };

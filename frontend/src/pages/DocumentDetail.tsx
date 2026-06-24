@@ -252,7 +252,7 @@ const getStatusColor = () => {
             ['Остаток при выезде', 'fuel_start'], ['Выдано топлива', 'fuel_issued'],
             ['Остаток при возвращении', 'fuel_end'], ['Расчетный расход', 'fuel_consumption'],
             ['Норма расхода', 'fuel_rate'],
-            ['Отклонение', 'fuel_deviation', true],
+            ['Отклонение', 'fuel_deviation'],
           ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
 
           <Section title="Время работы" fields={[
