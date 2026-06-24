@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
-import { HistoryOutlined, EyeOutlined } from '@ant-design/icons';
-import { getAuditDocumentHistory } from '../audit/document-history';
+import { HistoryOutlined, EyeOutlined } from '@ant-design/icons'
+import { getAuditDocumentHistory } from '../audit/document-history'
+
 interface AuditEntry {
   id: string
   action: string
@@ -17,6 +18,39 @@ const actionLabels: Record<string, string> = {
   FIELD_UPDATED: 'Поле изменено',
   DOCUMENT_CONFIRMED: 'Документ подтверждён',
   DOCUMENT_CREATED: 'Документ создан',
+  DOCUMENT_VALIDATED: 'Документ проверен',
+  OCR_STARTED: 'Распознавание запущено',
+  OCR_COMPLETED: 'Распознавание завершено',
+}
+
+const fieldLabels: Record<string, string> = {
+  document_number: 'ID документа',
+  date: 'Дата',
+  organization: 'Организация',
+  division: 'Подразделение',
+  driver_name: 'Водитель',
+  driver_number: 'Табельный номер',
+  vehicle_model: 'Автомобиль',
+  vehicle_plate: 'Госномер',
+  route: 'Маршрут',
+  odometer_start: 'Спидометр при выезде',
+  odometer_end: 'Спидометр при возвращении',
+  route_distance: 'Пробег по маршруту',
+  fuel_start: 'Остаток при выезде',
+  fuel_issued: 'Выдано топлива',
+  fuel_end: 'Остаток при возвращении',
+  fuel_consumption: 'Расчетный расход',
+  fuel_rate: 'Норма расхода',
+  fuel_deviation: 'Отклонение',
+  departure_time: 'Время выезда',
+  arrival_time: 'Время возвращения',
+  total_hours: 'Общее время работы',
+  downtime_hours: 'Время простоя',
+  signature_driver: 'Подпись водителя',
+  signature_mechanic: 'Подпись механика',
+  signature_dispatcher: 'Подпись диспетчера',
+  medical_check: 'Медосмотр пройден',
+  mileage: 'Пробег',
 }
 
 const ArchivePage = () => {
@@ -34,18 +68,22 @@ const ArchivePage = () => {
   const [divisionFilter, setDivisionFilter] = useState('all')
   const [exportFormat, setExportFormat] = useState('JSON')
   const [onlyAnomalies, setOnlyAnomalies] = useState(false)
+
   const [modalOpen, setModalOpen] = useState(false)
-const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
-const [auditLoading, setAuditLoading] = useState(false)
-const [selectedDocNumber, setSelectedDocNumber] = useState('')
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [selectedDocNumber, setSelectedDocNumber] = useState('')
+
+  const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true)
-    try {const filters: any = {}
+    try {
+      const filters: Record<string, unknown> = {}
       if (fromDate) filters.fromDate = fromDate
       if (toDate) filters.toDate = toDate
       if (onlyAnomalies) filters.hasAnomalies = true
-      if (globalSearch) filters.search = globalSearch 
+      if (globalSearch) filters.search = globalSearch
 
       const data = await documentsService.getDocumentsList(filters)
       setDocuments(data)
@@ -57,14 +95,12 @@ const [selectedDocNumber, setSelectedDocNumber] = useState('')
   }, [fromDate, toDate, onlyAnomalies, globalSearch])
 
   useEffect(() => {
-  loadDocumentsRef.current = loadDocuments
-}, [loadDocuments])
+    loadDocumentsRef.current = loadDocuments
+  }, [loadDocuments])
 
-useEffect(() => {
-  loadDocumentsRef.current()
-}, [loadDocuments])
-
-const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
+  useEffect(() => {
+    loadDocumentsRef.current()
+  }, [])
 
   const handleReset = () => {
     setFromDate('')
@@ -74,6 +110,59 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
     setDivisionFilter('all')
     setOnlyAnomalies(false)
     setSearchParams({})
+  }
+
+  const handleHistoryChange = async (doc: Document) => {
+    setSelectedDocNumber(doc.documentNumber || doc.id.substring(0, 8))
+    setModalOpen(true)
+    setAuditLoading(true)
+    try {
+      const data = await getAuditDocumentHistory(doc.id)
+      const mapped: AuditEntry[] = Array.isArray(data)
+        ? data
+            .map((entry: any) => ({
+              id: entry.id,
+              action: entry.action,
+              fieldKey: entry.payload?.fieldKey,
+              oldValue: entry.payload?.oldValue,
+              newValue: entry.payload?.newValue,
+              userName: entry.user?.fullName || entry.user?.email || 'Неизвестный',
+              createdAt: entry.createdAt,
+            }))
+            .filter(entry => {
+              if (entry.action === 'FIELD_UPDATED') {
+                if (!entry.oldValue && !entry.newValue) return false
+                if (entry.oldValue === entry.newValue) return false
+                if (!entry.oldValue?.trim() && !entry.newValue?.trim()) return false
+                return true
+              }
+              return true
+            })
+            .reduce<AuditEntry[]>((acc, current) => {
+              if (current.action === 'FIELD_UPDATED' && current.fieldKey) {
+                const existingIndex = acc.findIndex(
+                  item => item.action === 'FIELD_UPDATED' && 
+                         item.fieldKey === current.fieldKey &&
+                         item.oldValue === current.oldValue &&
+                         item.newValue === current.newValue
+                )
+                
+                if (existingIndex !== -1) {
+                  acc[existingIndex] = current
+                  return acc
+                }
+              }
+              acc.push(current)
+              return acc
+            }, [])
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        : []
+      setAuditEntries(mapped)
+    } catch {
+      setAuditEntries([])
+    } finally {
+      setAuditLoading(false)
+    }
   }
 
   const getField = (doc: Document, key: string): string => {
@@ -113,7 +202,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
       const model = getField(doc, 'vehicle_model').toLowerCase()
       if (!plate.includes(vehicleSearch.toLowerCase()) && !model.includes(vehicleSearch.toLowerCase())) return false
     }
-    
+
     return true
   })
 
@@ -130,19 +219,6 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
     a.download = `document-${doc.documentNumber ?? doc.id}.${fmt}`
     a.click()
   }
-  
-  const handleHistoryChange = async (documentId: Document['id']) => {
-  setModalOpen(true)
-  setAuditLoading(true)
-  try {
-    const data = await getAuditDocumentHistory(documentId)
-    setAuditEntries(data || [])
-  } catch {
-    setAuditEntries([])
-  } finally {
-    setAuditLoading(false)
-  }
-}
 
   return (
     <div className="archive-page">
@@ -234,29 +310,29 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
                   const anomaliesCount = doc.anomalies ? doc.anomalies.length : 0
 
                   return (
-                    <tr key={doc.id} onClick={() => navigate(`/documents/${doc.id}`)}>
-                      <td className="doc-id-cell">{docNum !== '—' ? docNum : `ID-${doc.id.substring(0,8)}`}</td>
-                      <td>{tripDate}</td>
-                      <td>{driver}</td>
-                      <td>{vehicle}</td>
-                      <td>{mileage !== '—' ? `${mileage} км` : '—'}</td>
-                      <td>{fuel !== '—' ? `${fuel} л` : '—'}</td>
-                      <td>
+                    <tr key={doc.id}>
+                      <td className="doc-id-cell" onClick={() => navigate(`/documents/${doc.id}`)}>{docNum !== '—' ? docNum : `ID-${doc.id.substring(0, 8)}`}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>{tripDate}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>{driver}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>{vehicle}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>{mileage !== '—' ? `${mileage} км` : '—'}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>{fuel !== '—' ? `${fuel} л` : '—'}</td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>
                         <span className={`accuracy-tag ${accClass}`}>{accuracy}%</span>
                       </td>
-                      <td>
+                      <td onClick={() => navigate(`/documents/${doc.id}`)}>
                         {anomaliesCount > 0 ? (
                           <span className="anomaly-badge">{anomaliesCount}</span>
                         ) : (
                           <span style={{ color: '#94a3b8' }}>—</span>
                         )}
                       </td>
-                      <td onClick={e => e.stopPropagation()}>
+                      <td>
                         <div className="actions-cell">
                           <button className="action-icon-btn" title="Просмотр карточки" onClick={() => navigate(`/documents/${doc.id}`)}><EyeOutlined /></button>
-                          <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-download w-4 h-4 text-gray-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg></button>
+                          <button className="action-icon-btn" title="Скачать скан" onClick={(e) => handleDownloadFile(doc.id, e)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download w-4 h-4 text-gray-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg></button>
                           <button className="action-icon-btn" title={`Экспорт ${exportFormat}`} onClick={() => handleExport(doc)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-json w-5 h-5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"></path><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"></path></svg></button>
-                          <button className="action-icon-btn" title="История изменений" onClick={() => handleHistoryChange(doc.id)}><HistoryOutlined /></button>
+                          <button className="action-icon-btn" title="История изменений" onClick={(e) => { e.stopPropagation(); handleHistoryChange(doc) }}><HistoryOutlined /></button>
                         </div>
                       </td>
                     </tr>
@@ -266,51 +342,58 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
             </table>
           </div>
         )}
-        {modalOpen && (
-  <div className="modal-overlay" onClick={() => setModalOpen(false)}>
-    <div className="modal-content" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2>История изменений: {selectedDocNumber}</h2>
       </div>
-      <div className="modal-body">
-        {auditLoading ? (
-          <p className="modal-loading">Загрузка...</p>
-        ) : auditEntries.length === 0 ? (
-          <p className="modal-empty">История изменений пуста</p>
-        ) : (
-          <ul className="audit-list">
-            {auditEntries.map(entry => (
-              <li key={entry.id} className="audit-item">
-                <div className="audit-header">
-                  <span className="audit-action">{actionLabels[entry.action] || entry.action}</span>
-                  <span className="audit-date">{new Date(entry.createdAt).toLocaleString('ru-RU')}</span>
-                </div>
-                {entry.userName && (
-                  <div className="audit-user">Пользователь: {entry.userName}</div>
-                )}
-                {entry.action === 'FIELD_UPDATED' && entry.fieldKey && (
-                  <div className="audit-diff">
-                    <span className="audit-field">Поле: {entry.fieldKey}</span>
-                    <div className="audit-values">
-                      <span className="audit-old">{entry.oldValue || '(пусто)'}</span>
-                      <span className="audit-arrow">→</span>
-                      <span className="audit-new">{entry.newValue || '(пусто)'}</span>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-      </div>
+
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>История изменений: {selectedDocNumber}</h2>
+            </div>
+            <div className="modal-body">
+              {auditLoading ? (
+                <p className="modal-loading">Загрузка...</p>
+              ) : auditEntries.length === 0 ? (
+                <p className="modal-empty">История изменений пуста</p>
+              ) : (
+                <ul className="audit-list">
+                  {auditEntries.map(entry => (
+                    <li key={entry.id} className="audit-item">
+                      <div className="audit-header">
+                        <span className="audit-action">{actionLabels[entry.action] || entry.action}</span>
+                        <span className="audit-date">{new Date(entry.createdAt).toLocaleString('ru-RU')}</span>
+                      </div>
+                      {entry.action !== 'FIELD_UPDATED' && entry.userName && (
+                        <div className="audit-user">{entry.userName}</div>
+                      )}
+                      {entry.action === 'FIELD_UPDATED' && entry.fieldKey && (
+                        <div className="audit-diff">
+                          <div className="audit-field-header">
+                            <span className="audit-field-user">{entry.userName || 'Неизвестный пользователь'}</span>
+                            <span> изменил поле </span>
+                            <span className="audit-field-name">{fieldLabels[entry.fieldKey] || entry.fieldKey}</span>
+                          </div>
+                          {(entry.oldValue || entry.newValue) && (
+                            <div className="audit-values">
+                              <span className="audit-old">{entry.oldValue || '(пусто)'}</span>
+                              {entry.oldValue && entry.newValue && <span className="audit-arrow">→</span>}
+                              <span className="audit-new">{entry.newValue || '(пусто)'}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .archive-page { min-height: 100vh; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; padding-top: 8px; padding-bottom: 32px; box-sizing: border-box; }
-        .archive-container { margin: 0 auto; padding: 0 8px; }
+        .archive-container { max-width: 1400px; margin: 0 auto; padding: 0 8px; }
         .page-header { margin-bottom: 24px; }
         .page-header h1 { font-size: 30px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: #101828; margin: 0; }
 
@@ -323,7 +406,7 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .filter-item input:focus, .filter-item select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
         
         .search-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 16px; }
-        .checkbox-container { display: flex; alignItems: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; font-weight: 500; }
+        .checkbox-container { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; font-weight: 500; }
         .checkbox-container input { width: 15px; height: 15px; cursor: pointer; }
         .btn-group { display: flex; gap: 12px; }
         .btn { padding: 9px 24px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.15s; border: none; }
@@ -336,10 +419,10 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .archive-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         .archive-table th { background: #f8fafc; padding: 12px 16px; font-weight: 600; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
         .archive-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-        .archive-table tbody tr { cursor: pointer; transition: background 0.15s; }
+        .archive-table tbody tr { transition: background 0.15s; }
         .archive-table tbody tr:hover { background-color: #f8fafc; }
         
-        .doc-id-cell { color: #2563eb; font-weight: 600; }
+        .doc-id-cell { color: #2563eb; font-weight: 600; cursor: pointer; }
         .accuracy-tag { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
         .acc-green { background-color: #f0fdf4; color: #16a34a; }
         .acc-orange { background-color: #fffbeb; color: #d97706; }
@@ -351,26 +434,28 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .action-icon-btn:hover { opacity: 1; transform: scale(1.15); }
         
         .loading-state, .empty-state { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; font-size: 14px; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content { background: white; border-radius: 16px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
-.modal-header h2 { margin: 0; font-size: 18px; color: #101828; }
-.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-.modal-loading, .modal-empty { text-align: center; color: #64748b; padding: 24px; }
-.audit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
-.audit-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
-.audit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.audit-action { font-weight: 600; color: #1e293b; }
-.audit-date { font-size: 12px; color: #94a3b8; }
-.audit-user { font-size: 13px; color: #64748b; margin-bottom: 6px; }
-.audit-diff { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
-.audit-field { font-size: 12px; color: #64748b; display: block; margin-bottom: 4px; }
-.audit-values { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.audit-old { background: #fef2f2; color: #dc2626; padding: 2px 8px; border-radius: 4px; text-decoration: line-through; }
-.audit-arrow { color: #94a3b8; }
-.audit-new { background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 4px; }
-      `}
-      </style>
+        .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
+        .modal-header h2 { margin: 0; font-size: 18px; color: #101828; }
+        .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+        .modal-loading, .modal-empty { text-align: center; color: #64748b; padding: 24px; }
+        .audit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+        .audit-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+        .audit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .audit-action { font-weight: 600; color: #1e293b; }
+        .audit-date { font-size: 12px; color: #94a3b8; }
+        .audit-user { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+        .audit-diff { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+        .audit-field-header { font-size: 13px; color: #374151; margin-bottom: 6px; }
+        .audit-field-user { font-weight: 600; color: #1e293b; }
+        .audit-field-name { font-weight: 600; color: #2563eb; }
+        .audit-values { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .audit-old { background: #fef2f2; color: #dc2626; padding: 2px 8px; border-radius: 4px; text-decoration: line-through; }
+        .audit-arrow { color: #94a3b8; }
+        .audit-new { background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 4px; }
+      `}</style>
     </div>
   )
 }
