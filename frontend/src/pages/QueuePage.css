@@ -75,6 +75,26 @@
   margin-bottom: 24px;
 }
 
+.queue-message {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.queue-message-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+}
+
+.queue-message-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
 .queue-filters-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

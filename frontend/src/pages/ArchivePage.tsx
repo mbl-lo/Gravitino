@@ -68,6 +68,20 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
   }
 
   const filteredDocuments = documents.filter(doc => {
+    if (divisionFilter !== 'all') {
+      const div = getField(doc, 'division').toLowerCase()
+      if (!div.includes(divisionFilter.toLowerCase())) return false
+    }
+    if (driverSearch.trim()) {
+      const driver = getField(doc, 'driver_name').toLowerCase()
+      if (!driver.includes(driverSearch.toLowerCase())) return false
+    }
+    if (vehicleSearch.trim()) {
+      const plate = getField(doc, 'vehicle_plate').toLowerCase()
+      const model = getField(doc, 'vehicle_model').toLowerCase()
+      if (!plate.includes(vehicleSearch.toLowerCase()) && !model.includes(vehicleSearch.toLowerCase())) return false
+    }
+
     if (globalSearch.trim()) {
       const searchLower = globalSearch.toLowerCase()
       const driver = getField(doc, 'driver_name').toLowerCase()
@@ -83,20 +97,6 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         docNum.includes(searchLower) ||
         fileName.includes(searchLower)
       )
-    }
-
-    if (divisionFilter !== 'all') {
-      const div = getField(doc, 'division').toLowerCase()
-      if (!div.includes(divisionFilter.toLowerCase())) return false
-    }
-    if (driverSearch.trim()) {
-      const driver = getField(doc, 'driver_name').toLowerCase()
-      if (!driver.includes(driverSearch.toLowerCase())) return false
-    }
-    if (vehicleSearch.trim()) {
-      const plate = getField(doc, 'vehicle_plate').toLowerCase()
-      const model = getField(doc, 'vehicle_model').toLowerCase()
-      if (!plate.includes(vehicleSearch.toLowerCase()) && !model.includes(vehicleSearch.toLowerCase())) return false
     }
     
     return true
@@ -300,14 +300,29 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .btn-outline { background-color: white; color: #475569; border: 1px solid #cbd5e1; }
         .btn-outline:hover { background-color: #f8fafc; border-color: #94a3b8; }
         
-        .table-wrapper { max-width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow-x: auto; overflow-y: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
-        .archive-table { width: 100%; min-width: 980px; border-collapse: collapse; text-align: left; font-size: 13px; }
-        .archive-table th { background: #f8fafc; padding: 12px 16px; font-weight: 600; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-        .archive-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .table-wrapper { width: 100%; min-width: 0; max-width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow-x: auto; overflow-y: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .archive-table { width: 100%; min-width: 0; border-collapse: collapse; table-layout: fixed; text-align: left; font-size: 13px; }
+        .archive-table th:nth-child(1), .archive-table td:nth-child(1) { width: 11%; }
+        .archive-table th:nth-child(2), .archive-table td:nth-child(2) { width: 9%; }
+        .archive-table th:nth-child(3), .archive-table td:nth-child(3) { width: 16%; }
+        .archive-table th:nth-child(4), .archive-table td:nth-child(4) { width: 12%; }
+        .archive-table th:nth-child(5), .archive-table td:nth-child(5) { width: 9%; }
+        .archive-table th:nth-child(6), .archive-table td:nth-child(6) { width: 11%; }
+        .archive-table th:nth-child(7), .archive-table td:nth-child(7) { width: 10%; }
+        .archive-table th:nth-child(8), .archive-table td:nth-child(8) { width: 8%; }
+        .archive-table th:nth-child(9), .archive-table td:nth-child(9) { width: 14%; }
+        .archive-table th { background: #f8fafc; padding: 10px 8px; font-weight: 600; color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #e2e8f0; white-space: normal; overflow-wrap: anywhere; }
+        .archive-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; overflow-wrap: anywhere; }
+        .archive-table td:nth-child(2),
+        .archive-table td:nth-child(5),
+        .archive-table td:nth-child(6),
+        .archive-table td:nth-child(7),
+        .archive-table td:nth-child(8),
+        .archive-table td:nth-child(9) { white-space: nowrap; }
         .archive-table tbody tr { cursor: pointer; transition: background 0.15s; }
         .archive-table tbody tr:hover { background-color: #f8fafc; }
 
-        .pagination-bar { min-width: 980px; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 16px; border-top: 1px solid #e2e8f0; background: white; box-sizing: border-box; }
+        .pagination-bar { min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 16px; border-top: 1px solid #e2e8f0; background: white; box-sizing: border-box; }
         .pagination-size, .pagination-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .pagination-size span { font-size: 14px; color: #4b5563; }
         .pagination-size select { padding: 4px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; color: #334155; }
@@ -325,15 +340,15 @@ const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
         .acc-red { background-color: #fef2f2; color: #dc2626; }
         
         .anomaly-badge { background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 700; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
-        .actions-cell { display: flex; align-items: center; gap: 10px; font-size: 15px; white-space: nowrap; }
+        .actions-cell { display: flex; align-items: center; gap: 6px; font-size: 15px; white-space: nowrap; }
         .action-icon-btn { flex: 0 0 auto; background: none; border: none; cursor: pointer; padding: 2px; opacity: 0.65; transition: opacity 0.15s, transform 0.1s; }
         .action-icon-btn:hover { opacity: 1; transform: scale(1.15); }
         
         .loading-state, .empty-state { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; font-size: 14px; }
         @media (max-width: 1024px) {
           .search-card { padding: 16px; }
-          .archive-table { min-width: 900px; }
-          .pagination-bar { min-width: 900px; }
+          .archive-table { min-width: 860px; }
+          .pagination-bar { min-width: 860px; }
         }
         @media (max-width: 768px) {
           .archive-container { padding: 0 4px; }

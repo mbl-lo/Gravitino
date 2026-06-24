@@ -24,6 +24,13 @@ interface User {
   lastLoginAt?: string;
 }
 
+type UserMenuItem = {
+  label: string;
+  action: () => void;
+  show: boolean;
+  danger?: boolean;
+};
+
 const ROLE_MAP: Record<string, string> = {
   admin: 'Администратор',
   operator: 'Оператор',
@@ -64,9 +71,11 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', role: 'operator', departmentId: '22222222-2222-4222-8222-222222222222' });
   const [submitting, setSubmitting] = useState(false);
+  const [pendingUserAction, setPendingUserAction] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({ fullName: '', email: '', role: '' });
@@ -86,18 +95,23 @@ export default function UsersPage() {
   }, []);
 
   async function handleAddUser() {
+    if (submitting) return;
     if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
       setError('Заполните все обязательные поля');
       setTimeout(() => setError(''), 3000);
       return;
     }
+    setError('');
+    setSuccess('');
     setSubmitting(true);
     try {
-      await api.post('/users', { ...form, organizationId: (currentUser as any)?.organizationId, departmentId: form.departmentId });
+      await api.post('/users', { ...form, organizationId: currentUser?.organizationId, departmentId: form.departmentId });
       const res = await api.get<User[]>('/users');
       setUsers(res.data);
       setShowModal(false);
       setForm({ fullName: '', email: '', password: '', role: 'operator', departmentId: '22222222-2222-4222-8222-222222222222' });
+      setSuccess('Пользователь создан');
+      setTimeout(() => setSuccess(''), 3000);
     } catch {
       setError('Ошибка при создании пользователя');
       setTimeout(() => setError(''), 3000);
@@ -107,39 +121,65 @@ export default function UsersPage() {
   }
 
   async function handleDeactivate(id: string) {
-    var result = await api.patch(`/users/${id}/deactivate`);
-    setUsers((prev) => prev.map((u) => u.id === id ? { ...u, isActive: !u.isActive } : u));
-    setMenuOpenId(null);
-    if (result.data.isActive) {
-      alert('Пользователь активирован');
-    }
-    else
-    {
-      alert('Пользователь деактивирован');
+    if (pendingUserAction) return;
+    setPendingUserAction(`deactivate:${id}`);
+    setError('');
+    setSuccess('');
+    try {
+      const result = await api.patch(`/users/${id}/deactivate`);
+      setUsers((prev) => prev.map((u) => u.id === id ? { ...u, isActive: result.data.isActive } : u));
+      setMenuOpenId(null);
+      setSuccess(result.data.isActive ? 'Пользователь активирован' : 'Пользователь деактивирован');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setError('Не удалось изменить статус пользователя');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setPendingUserAction(null);
     }
   }
 
   async function handleDelete(id: string) {
+    if (pendingUserAction) return;
     if (!confirm('Удалить пользователя?')) return;
-    await api.delete(`/users/${id}`);
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    setMenuOpenId(null);
-    alert('Пользователь удален');
+    setPendingUserAction(`delete:${id}`);
+    setError('');
+    setSuccess('');
+    try {
+      await api.delete(`/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setMenuOpenId(null);
+      setSuccess('Пользователь удален');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setError('Не удалось удалить пользователя');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setPendingUserAction(null);
+    }
   }
 
   async function handleEdit() {
+    if (submitting) return;
     if (!editUser) return;
     if (!editForm.fullName.trim() || !editForm.email.trim()) {
       setError('Заполните все обязательные поля');
       setTimeout(() => setError(''), 3000);
       return;
     }
+    setError('');
+    setSuccess('');
     setSubmitting(true);
     try {
       await api.patch(`/users/${editUser.id}`, editForm);
       const res = await api.get<User[]>('/users');
       setUsers(res.data);
       setEditUser(null);
+      setSuccess('Пользователь сохранен');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setError('Не удалось сохранить пользователя');
+      setTimeout(() => setError(''), 3000);
     } finally {
       setSubmitting(false);
     }
@@ -195,6 +235,24 @@ export default function UsersPage() {
               zIndex: 1000,
             }}>
               {error}
+            </div>
+          )}
+          {success && (
+            <div className="toast-success" style={{
+              position: 'fixed',
+              top: '1.5rem',
+              right: '2rem',
+              backgroundColor: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              borderRadius: '10px',
+              padding: '1rem 1.25rem',
+              color: '#059669',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+            }}>
+              {success}
             </div>
           )}
         </div>
@@ -293,20 +351,22 @@ export default function UsersPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (pendingUserAction) return;
                         setMenuOpenId(menuOpenId === user.id ? null : user.id);
                       }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: '#6b7280' }}>⋮</button>
+                      disabled={Boolean(pendingUserAction)}
+                      style={{ background: 'none', border: 'none', cursor: pendingUserAction ? 'not-allowed' : 'pointer', fontSize: '1.25rem', color: '#6b7280', opacity: pendingUserAction ? 0.5 : 1 }}>⋮</button>
                     {menuOpenId === user.id && (
                       <div style={{ position: 'absolute', right: '1rem', top: '3rem', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 50, minWidth: '160px' }}>
-                        {[
+                        {([
                           { label: 'Редактировать', action: () => { setEditUser(user); setEditForm({ fullName: user.fullName, email: user.email, role: user.role }); setMenuOpenId(null); }, show: true },
                           { label: user.isActive ? 'Деактивировать' : 'Активировать', action: () => handleDeactivate(user.id), show: currentUser.id !== user.id && user.email !== 'admin@gravitino.local'
                            },
                           { label: 'Удалить', action: () => handleDelete(user.id), danger: true, show: currentUser.id !== user.id && user.email !== 'admin@gravitino.local' },
-                        ]
+                        ] satisfies UserMenuItem[])
                         .filter((item) => item.show)
                         .map((item) => (
-                          <button key={item.label} onClick={item.action} style={{ display: 'block', width: '100%', padding: '0.625rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', color: (item as any).danger ? '#dc2626' : '#111827' }}>
+                          <button key={item.label} onClick={item.action} disabled={Boolean(pendingUserAction)} style={{ display: 'block', width: '100%', padding: '0.625rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: pendingUserAction ? 'not-allowed' : 'pointer', opacity: pendingUserAction ? 0.6 : 1, fontSize: '0.875rem', color: item.danger ? '#dc2626' : '#111827' }}>
                             {item.label}
                           </button>
                           ))}
@@ -347,7 +407,7 @@ export default function UsersPage() {
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button onClick={() => setEditUser(null)} style={{ padding: '0.625rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '0.875rem' }}>Отмена</button>
-              <button onClick={handleEdit} disabled={submitting} style={{ padding: '0.625rem 1.25rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600' }}>
+              <button onClick={handleEdit} disabled={submitting} style={{ padding: '0.625rem 1.25rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.65 : 1, fontSize: '0.875rem', fontWeight: '600' }}>
                 {submitting ? 'Сохранение...' : 'Сохранить'}
               </button>
             </div>
@@ -395,7 +455,7 @@ export default function UsersPage() {
               <button onClick={() => setShowModal(false)} style={{ padding: '0.625rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '0.875rem' }}>
                 Отмена
               </button>
-              <button onClick={handleAddUser} disabled={submitting} style={{ padding: '0.625rem 1.25rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600' }}>
+              <button onClick={handleAddUser} disabled={submitting} style={{ padding: '0.625rem 1.25rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.65 : 1, fontSize: '0.875rem', fontWeight: '600' }}>
                 {submitting ? 'Создание...' : 'Создать'}
               </button>
             </div>

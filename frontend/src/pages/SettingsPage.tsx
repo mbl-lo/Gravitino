@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getUsers, getSystemSettings, updateSystemSettings } from '../services/api'
+import type { User } from '../services/types'
 
 interface RoleTemplate {
   role: string
@@ -94,10 +95,11 @@ const SettingsPage = () => {
   const [dataRetention, setDataRetention] = useState(36)
   const [enable2FA, setEnable2FA] = useState(true)
 
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
   const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     const loadData = async () => {
@@ -142,8 +144,10 @@ const SettingsPage = () => {
   }
 
   const handleSave = async () => {
+    if (isSaving) return
     setIsSaving(true)
     setSuccessMessage('')
+    setErrorMessage('')
     try {
       await updateSystemSettings({
         maxFuelDeviation,
@@ -161,6 +165,7 @@ const SettingsPage = () => {
       setSuccessMessage('Конфигурация системы успешно сохранена!')
     } catch (err) {
       console.error(err)
+      setErrorMessage('Не удалось сохранить настройки. Попробуйте еще раз.')
     } finally {
       setIsSaving(false)
     }
@@ -175,6 +180,9 @@ const SettingsPage = () => {
 
       {successMessage && (
         <div style={styles.alertSuccess}>{successMessage}</div>
+      )}
+      {errorMessage && (
+        <div style={styles.alertError}>{errorMessage}</div>
       )}
 
       <div style={styles.layoutContainer}>
@@ -322,7 +330,7 @@ const SettingsPage = () => {
         </div>
       </div>
       <div style={styles.bottomBar}>
-        <button onClick={handleSave} disabled={isSaving} style={styles.saveButton}>
+        <button onClick={handleSave} disabled={isSaving} style={{ ...styles.saveButton, opacity: isSaving ? 0.65 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
           {isSaving ? 'Сохранение...' : <><SystemIcon name="save" size={20} color="currentColor" />Сохранить изменения</>}
         </button>
       </div>
@@ -364,7 +372,8 @@ const styles = {
   roleCountBadge: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', minWidth: '90px' },
   bottomBar: { position: 'fixed' as const, bottom: 0, left: '260px', right: 0, height: '70px', backgroundColor: 'white', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: '32px', zIndex: 10 },
   saveButton: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' },
-  alertSuccess: { padding: '12px 16px', backgroundColor: '#ecfdf5', color: '#059669', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', border: '1px solid #a7f3d0' }
+  alertSuccess: { padding: '12px 16px', backgroundColor: '#ecfdf5', color: '#059669', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', border: '1px solid #a7f3d0' },
+  alertError: { padding: '12px 16px', backgroundColor: '#fef2f2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', border: '1px solid #fecaca' }
 }
 
 export default SettingsPage

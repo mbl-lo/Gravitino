@@ -29,6 +29,9 @@ const styles = {
   },
   main: {
     flex: 1,
+    minWidth: 0,
+    width: 'calc(100% - 280px)',
+    maxWidth: 'calc(100% - 280px)',
     marginLeft: '280px',
     marginTop: '70px',
     padding: '24px',
@@ -39,6 +42,7 @@ const styles = {
   content: {
     width: '100%',
     height: '100%',
+    minWidth: 0,
   },
 }
 

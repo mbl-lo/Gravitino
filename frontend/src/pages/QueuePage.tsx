@@ -90,10 +90,10 @@ const QueuePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [activeStatus, setActiveStatus] = useState<QueueStatus>('all')
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
+  const [queueMessage, setQueueMessage] = useState<{ text: string; isError: boolean } | null>(null)
   const [filters, setFilters] = useState<AppliedFilters>({ fromDate: '', toDate: '', driver: '', vehicle: '' })
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({ fromDate: '', toDate: '', driver: '', vehicle: '' })
   const fetchQueueRef = useRef<() => Promise<void>>(() => Promise.resolve())
-  const [driverSearch, setDriverSearch] = useState('')
 
   const fetchQueue = useCallback(async () => {
     try {
@@ -126,10 +126,14 @@ const QueuePage = () => {
   }, [])
 
   const handleRunOcr = async (documentId: string) => {
+    if (processingIds.has(documentId)) return
+    setQueueMessage(null)
     setProcessingIds(prev => new Set(prev).add(documentId))
     try {
       await runOcr(documentId)
+      setQueueMessage({ text: 'OCR запущен для документа', isError: false })
     } catch (err) {
+      setQueueMessage({ text: 'Не удалось запустить OCR. Попробуйте еще раз.', isError: true })
       console.error('Ошибка запуска OCR:', err)
     } finally {
       setProcessingIds(prev => {
@@ -149,9 +153,9 @@ const QueuePage = () => {
 
   const filteredDocuments = documents.filter(doc => {
 
-    if (driverSearch.trim()) {
+    if (appliedFilters.driver.trim()) {
       const driver = getFieldValue(doc.fields, 'driver_name').toLowerCase()
-      if (!driver.includes(driverSearch.toLowerCase())) return false
+      if (!driver.includes(appliedFilters.driver.trim().toLowerCase())) return false
     }
 
     if (activeStatus !== 'all' && doc.displayStatus !== activeStatus) return false
@@ -165,10 +169,6 @@ const QueuePage = () => {
 
     return true
   })
-
-  const driverOptions = Array.from(
-    new Set(documents.map(doc => getFieldValue(doc.fields, 'driver_name')).filter(value => value !== '—')),
-  )
 
   return (
     <div className="queue-page">
@@ -212,7 +212,12 @@ const QueuePage = () => {
           </div>
           <div className="queue-filter-field">
               <label>Водитель</label>
-              <input type="text" placeholder="ФИО водителя" value={driverSearch} onChange={e => setDriverSearch(e.target.value)} />
+              <input
+                type="text"
+                placeholder="ФИО водителя"
+                value={filters.driver}
+                onChange={event => setFilters(prev => ({ ...prev, driver: event.target.value }))}
+              />
             </div>
           <div className="queue-filter-field">
             <label>Автомобиль</label>
@@ -233,6 +238,12 @@ const QueuePage = () => {
           </div>
         </div>
       </div>
+
+      {queueMessage && (
+        <div className={`queue-message ${queueMessage.isError ? 'queue-message-error' : 'queue-message-success'}`}>
+          {queueMessage.text}
+        </div>
+      )}
 
       <div className="queue-table-card">
         <div className="queue-table-scroll">

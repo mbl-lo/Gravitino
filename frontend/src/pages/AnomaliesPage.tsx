@@ -106,7 +106,8 @@ const AnomaliesPage = () => {
     return true;
   });
 
-  const selectedAnomaly = anomalies.find(a => a.id === selectedId) || null;
+  const anomalyTypes = Array.from(new Set(anomalies.map(a => a.type).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+  const selectedAnomaly = filtered.find(a => a.id === selectedId) || null;
 
   // Подсчет статистики (только для активных аномалий)
   const stats = {
@@ -199,6 +200,7 @@ const AnomaliesPage = () => {
             <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)}>
               <option value="all">Все</option>
               <option value="critical">Критические</option>
+              <option value="high">Высокие</option>
               <option value="medium">Средние</option>
               <option value="low">Низкие</option>
             </select>
@@ -208,9 +210,9 @@ const AnomaliesPage = () => {
             <label>Тип аномалии</label>
             <select value={filterType} onChange={e => setFilterType(e.target.value)}>
               <option value="all">Все типы</option>
-              <option value="Несоответствие пробега">Несоответствие пробега</option>
-              <option value="Расход топлива выше нормы">Расход топлива</option>
-              <option value="Отсутствует подпись">Отсутствие подписи</option>
+              {anomalyTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
             </select>
           </div>
 
@@ -653,6 +655,8 @@ const AnomaliesPage = () => {
 
         /* Table */
         .table-wrapper {
+          width: 100%;
+          min-width: 0;
           max-width: 100%;
           background: white;
           border-radius: 12px;
@@ -663,9 +667,35 @@ const AnomaliesPage = () => {
 
         .anomalies-table {
           width: 100%;
-          min-width: 820px;
+          min-width: 0;
           border-collapse: collapse;
+          table-layout: fixed;
           font-size: 14px;
+        }
+
+        .anomalies-table th:nth-child(1),
+        .anomalies-table td:nth-child(1) {
+          width: 16%;
+        }
+
+        .anomalies-table th:nth-child(2),
+        .anomalies-table td:nth-child(2) {
+          width: 34%;
+        }
+
+        .anomalies-table th:nth-child(3),
+        .anomalies-table td:nth-child(3) {
+          width: 22%;
+        }
+
+        .anomalies-table th:nth-child(4),
+        .anomalies-table td:nth-child(4) {
+          width: 15%;
+        }
+
+        .anomalies-table th:nth-child(5),
+        .anomalies-table td:nth-child(5) {
+          width: 13%;
         }
 
         .anomalies-table thead tr {
@@ -675,7 +705,7 @@ const AnomaliesPage = () => {
 
         .anomalies-table th {
           text-align: left;
-          padding: 14px 16px;
+          padding: 12px 10px;
           font-weight: 600;
           color: #475569;
           font-size: 12px;
@@ -685,10 +715,11 @@ const AnomaliesPage = () => {
         }
 
         .anomalies-table td {
-          padding: 14px 16px;
+          padding: 12px 10px;
           border-bottom: 1px solid #f1f5f9;
           color: #334155;
           vertical-align: middle;
+          overflow-wrap: anywhere;
         }
 
         .anomalies-table td:first-child,
@@ -699,7 +730,7 @@ const AnomaliesPage = () => {
 
         .anomalies-table td:nth-child(2),
         .anomalies-table td:nth-child(3) {
-          min-width: 180px;
+          white-space: normal;
         }
 
         .anomalies-table tbody tr {
@@ -738,7 +769,8 @@ const AnomaliesPage = () => {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 4px 10px;
+          max-width: 100%;
+          padding: 4px 8px;
           border-radius: 20px;
           font-size: 11px;
           font-weight: 500;
@@ -768,7 +800,8 @@ const AnomaliesPage = () => {
         /* Status badges */
         .status-badge {
           display: inline-block;
-          padding: 4px 10px;
+          max-width: 100%;
+          padding: 4px 8px;
           border-radius: 20px;
           font-size: 11px;
           font-weight: 500;
@@ -877,6 +910,10 @@ const AnomaliesPage = () => {
           
           .detail-panel {
             padding: 18px;
+          }
+
+          .anomalies-table {
+            min-width: 680px;
           }
         }
 

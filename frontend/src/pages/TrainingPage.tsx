@@ -41,8 +41,10 @@ const statCards = [
   { key: 'labeledFields', label: 'Размеченных полей', icon: <DatabaseIcon />, color: '#2563eb', bgColor: '#eff6ff' },
   { key: 'modelAccuracy', label: 'Точность модели', icon: <RiseOutlined style={{ fontSize: '24px', color: '#16a34a' }} />, color: '#16a34a', bgColor: '#ecfdf5' },
   { key: 'needsLabeling', label: 'Требуют разметки', icon: <ExclamationCircleOutlined style={{ fontSize: '24px', color: '#f59e0b' }} />, color: '#f59e0b', bgColor: '#fffbeb' },
-  { key: 'lastTraining', label: 'Последнее обучение', icon: <CalendarOutlined style={{ fontSize: '24px', color: '#4b5563' }} />, color: '#4b5563', bgColor: '#f3f4f6' }
+  { key: 'lastTraining', label: 'Последнее обучение', icon: <CalendarOutlined style={{ fontSize: '24px', color: '#4b5563' }} />, color: '#101828', bgColor: '#f9fafb' }
 ] as const
+
+const trainingFilters = ['Разметка', 'Ошибки OCR', 'История обучения', 'Наборы данных'] as const
 
 const TrainingPage = () => {
   const [stats, setStats] = useState<TrainingStats>({ labeledFields: 0, modelAccuracy: 0, needsLabeling: 0, lastTraining: '' })
@@ -50,12 +52,15 @@ const TrainingPage = () => {
   const [currentDocument, setCurrentDocument] = useState<TrainingDocument | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [qualityFields] = useState<FieldQuality[]>(MOCK_QUALITY)
+  const [activeFilter, setActiveFilter] = useState<typeof trainingFilters[number]>('Разметка')
 
   const [selectedField, setSelectedField] = useState<LabeledField | null>(null)
   const [fieldType, setFieldType] = useState('')
   const [correctValue, setCorrectValue] = useState('')
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
+  const [trainingAction, setTrainingAction] = useState<'confirm' | 'add' | null>(null)
+  const [trainingMessage, setTrainingMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,14 +86,32 @@ const TrainingPage = () => {
   }, [])
 
   const handleConfirm = useCallback(async () => {
-    if (!currentDocument) return
-    try { await confirmTraining(currentDocument.id) } catch { /* noop */ }
-  }, [currentDocument])
+    if (!currentDocument || trainingAction) return
+    setTrainingAction('confirm')
+    setTrainingMessage(null)
+    try {
+      await confirmTraining(currentDocument.id)
+      setTrainingMessage({ text: 'Разметка подтверждена', isError: false })
+    } catch {
+      setTrainingMessage({ text: 'Не удалось подтвердить разметку', isError: true })
+    } finally {
+      setTrainingAction(null)
+    }
+  }, [currentDocument, trainingAction])
 
   const handleAddToTraining = useCallback(async () => {
-    if (!currentDocument) return
-    try { await addToTrainingSet(currentDocument.id) } catch { /* noop */ }
-  }, [currentDocument])
+    if (!currentDocument || trainingAction) return
+    setTrainingAction('add')
+    setTrainingMessage(null)
+    try {
+      await addToTrainingSet(currentDocument.id)
+      setTrainingMessage({ text: 'Документ добавлен в обучающий набор', isError: false })
+    } catch {
+      setTrainingMessage({ text: 'Не удалось добавить документ в обучающий набор', isError: true })
+    } finally {
+      setTrainingAction(null)
+    }
+  }, [currentDocument, trainingAction])
 
   const getAccuracyColor = (accuracy: number) => {
     if (accuracy >= 91) return '#16a34a'
@@ -107,6 +130,12 @@ const TrainingPage = () => {
     }
   }
 
+  const visibleFields = currentDocument?.fields.filter(field => {
+    if (activeFilter === 'Ошибки OCR') return field.confidence < 80
+    if (activeFilter === 'История обучения' || activeFilter === 'Наборы данных') return Boolean(field.correctValue)
+    return !field.correctValue
+  }) ?? []
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -116,14 +145,32 @@ const TrainingPage = () => {
 
       <div style={styles.statsGrid}>
         {statCards.map(card => (
-          <div key={card.key} style={{ ...styles.statCard, borderColor: card.color }}>
-            <div style={{ ...styles.statIcon, backgroundColor: card.bgColor }}>{card.icon}</div>
+          <div key={card.key} style={styles.statCard}>
             <div style={styles.statContent}>
               <span style={styles.statLabel}>{card.label}</span>
               <span style={{ ...styles.statValue, color: card.color }}>{getStatValue(card.key)}</span>
             </div>
+            <div style={{ ...styles.statIcon, backgroundColor: card.bgColor }}>{card.icon}</div>
           </div>
         ))}
+      </div>
+
+      <div style={styles.filterTabsCard}>
+        <div style={styles.filterTabs} aria-label="Фильтры обучающих данных">
+          {trainingFilters.map(filter => {
+            const isActive = activeFilter === filter
+            return (
+              <button
+                key={filter}
+                type="button"
+                style={{ ...styles.filterTab, ...(isActive ? styles.filterTabActive : {}) }}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div style={styles.mainLayout}>
@@ -146,7 +193,7 @@ const TrainingPage = () => {
             {currentDocument ? (
               <>
                 <div style={styles.fieldsGrid}>
-                  {currentDocument.fields.map(field => (
+                  {visibleFields.map(field => (
                     <div key={field.id} style={{
                       ...styles.fieldItem,
                       ...(selectedField?.id === field.id ? styles.fieldItemSelected : {}),
@@ -162,6 +209,9 @@ const TrainingPage = () => {
                       </div>
                     </div>
                   ))}
+                  {visibleFields.length === 0 && (
+                    <div style={styles.filteredEmpty}>Нет полей по выбранному фильтру</div>
+                  )}
                 </div>
                 <div style={styles.instructions}>
                   <span>Клик — выделить поле</span>
@@ -191,6 +241,11 @@ const TrainingPage = () => {
           <h2 style={styles.sectionTitle}>Редактор меток</h2>
 
           <div style={styles.editorContent}>
+            {trainingMessage && (
+              <div style={trainingMessage.isError ? styles.actionError : styles.actionSuccess}>
+                {trainingMessage.text}
+              </div>
+            )}
             <div style={styles.editorField}>
               <label style={styles.editorLabel}>Тип поля</label>
               <div style={styles.dropdownWrapper}>
@@ -243,15 +298,27 @@ const TrainingPage = () => {
             </div>
 
             <div style={styles.editorActions}>
-              <button onClick={handleConfirm} style={styles.btnConfirm}>
+              <button
+                onClick={handleConfirm}
+                disabled={Boolean(trainingAction)}
+                style={{ ...styles.btnConfirm, ...(trainingAction ? styles.btnDisabled : {}) }}
+              >
                 <CheckCircleOutlined style={{ marginRight: '8px' }} />
-                Подтвердить разметку
+                {trainingAction === 'confirm' ? 'Подтверждение...' : 'Подтвердить разметку'}
               </button>
-              <button onClick={() => setCorrectValue(selectedField?.ocrValue || '')} style={styles.btnFix}>
+              <button
+                onClick={() => setCorrectValue(selectedField?.ocrValue || '')}
+                disabled={Boolean(trainingAction)}
+                style={{ ...styles.btnFix, ...(trainingAction ? styles.btnDisabled : {}) }}
+              >
                 Исправить значение
               </button>
-              <button onClick={handleAddToTraining} style={styles.btnTrain}>
-                Добавить в обучающий набор
+              <button
+                onClick={handleAddToTraining}
+                disabled={Boolean(trainingAction)}
+                style={{ ...styles.btnTrain, ...(trainingAction ? styles.btnDisabled : {}) }}
+              >
+                {trainingAction === 'add' ? 'Добавление...' : 'Добавить в обучающий набор'}
               </button>
             </div>
           </div>
@@ -287,23 +354,28 @@ const styles = {
   header: { marginBottom: '24px' },
   mainTitle: { fontSize: '30px', lineHeight: 1.25, fontWeight: '700', letterSpacing: '-0.02em', color: '#101828', margin: 0 },
   subtitle: { maxWidth: '820px', margin: '6px 0px 0px', color: 'rgb(102, 112, 133)', fontSize: '15px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px', marginBottom: '32px' },
-  statCard: { minWidth: 0, backgroundColor: 'white', borderRadius: '16px', padding: 'clamp(16px, 2vw, 24px)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px' },
-  statIcon: { width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  statContent: { minWidth: 0, display: 'flex', flexDirection: 'column' as const, gap: '4px' },
+  filterTabsCard: { minWidth: 0, backgroundColor: 'white', borderRadius: '20px', padding: '8px', boxShadow: '0 8px 24px rgba(16,24,40,0.06)', marginBottom: '24px' },
+  filterTabs: { display: 'flex', flexWrap: 'wrap' as const, gap: '8px' },
+  filterTab: { padding: '8px 16px', borderRadius: '12px', border: 'none', backgroundColor: 'transparent', color: '#4b5563', fontSize: '14px', lineHeight: '20px', fontWeight: '500', cursor: 'pointer', transition: 'background-color 0.15s ease, color 0.15s ease' },
+  filterTabActive: { backgroundColor: '#2563EB', color: 'white' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '24px', marginBottom: '24px' },
+  statCard: { minWidth: 0, backgroundColor: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 24px rgba(16,24,40,0.06)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' },
+  statIcon: { width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  statContent: { minWidth: 0, display: 'flex', flexDirection: 'column' as const, gap: '8px' },
   statLabel: { fontSize: '14px', color: '#6b7280', fontWeight: '500', overflowWrap: 'anywhere' as const },
-  statValue: { fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: '700', overflowWrap: 'anywhere' as const },
-  mainLayout: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 'clamp(16px, 3vw, 32px)', alignItems: 'stretch' as const, marginBottom: '32px' },
-  documentSection: { minWidth: 0, backgroundColor: 'white', borderRadius: '12px', padding: 'clamp(16px, 2vw, 24px)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', minHeight: '500px', display: 'flex', flexDirection: 'column' as const },
-  editorSection: { minWidth: 0, backgroundColor: 'white', borderRadius: '12px', padding: 'clamp(16px, 2vw, 24px)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', minHeight: '500px', display: 'flex', flexDirection: 'column' as const },
+  statValue: { fontSize: '30px', lineHeight: 1.2, fontWeight: '700', overflowWrap: 'anywhere' as const },
+  mainLayout: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: '24px', alignItems: 'stretch' as const, marginBottom: '24px' },
+  documentSection: { minWidth: 0, backgroundColor: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 24px rgba(16,24,40,0.06)', minHeight: '500px', display: 'flex', flexDirection: 'column' as const },
+  editorSection: { minWidth: 0, backgroundColor: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 24px rgba(16,24,40,0.06)', minHeight: '500px', display: 'flex', flexDirection: 'column' as const },
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '12px', marginBottom: '16px' },
-  sectionTitle: { fontSize: '18px', fontWeight: '600', margin: 0, color: '#1f2937' },
-  docSelect: { maxWidth: '100%', minWidth: 0, padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', outline: 'none' },
-  documentContainer: { minWidth: 0, flex: 1, backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', display: 'flex', flexDirection: 'column' as const },
-  fieldsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '8px', padding: '16px' },
-  fieldItem: { minWidth: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px', padding: '12px 16px', borderRadius: '8px', border: '2px solid #e5e7eb', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: 'white' },
+  sectionTitle: { fontSize: '18px', fontWeight: '600', margin: 0, color: '#101828' },
+  docSelect: { maxWidth: '100%', minWidth: 0, padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '13px', outline: 'none' },
+  documentContainer: { minWidth: 0, flex: 1, minHeight: '500px', backgroundColor: '#f3f4f6', borderRadius: '12px', padding: '32px', overflow: 'auto', display: 'flex', flexDirection: 'column' as const },
+  fieldsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '8px' },
+  fieldItem: { minWidth: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e5e7eb', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: 'white' },
   fieldItemSelected: { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
   fieldItemDone: { borderColor: '#d1fae5', backgroundColor: '#f0fdf4' },
+  filteredEmpty: { gridColumn: '1 / -1', padding: '32px 16px', color: '#6b7280', textAlign: 'center' as const },
   fieldInfo: { minWidth: 0, display: 'flex', alignItems: 'center', flexWrap: 'wrap' as const, gap: '8px 16px' },
   fieldType: { fontWeight: '500', color: '#1f2937', overflowWrap: 'anywhere' as const },
   fieldOcr: { fontSize: '14px', color: '#6b7280', overflowWrap: 'anywhere' as const },
@@ -311,44 +383,47 @@ const styles = {
   badgeDone: { fontSize: '13px', color: '#16a34a', fontWeight: '500' },
   badgePending: { fontSize: '13px', color: '#f59e0b', fontWeight: '500' },
   fieldConfidence: { fontSize: '13px', fontWeight: '600' },
-  documentPlaceholder: { flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px, 5vw, 48px) 16px', backgroundColor: '#f9fafb', gap: '16px', textAlign: 'center' as const },
-  placeholderIcon: { width: '80px', height: '80px', borderRadius: '20px', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' },
-  placeholderTitle: { fontSize: '16px', fontWeight: '600', color: '#374151', margin: 0, overflowWrap: 'anywhere' as const },
+  documentPlaceholder: { flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px, 5vw, 48px) 16px', gap: '16px', textAlign: 'center' as const },
+  placeholderIcon: { width: '96px', height: '96px', borderRadius: '12px', backgroundColor: 'white', boxShadow: '0 10px 15px rgba(0,0,0,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' },
+  placeholderTitle: { fontSize: '16px', fontWeight: '500', color: '#6b7280', margin: 0, overflowWrap: 'anywhere' as const },
   placeholderHints: { display: 'flex', flexDirection: 'column' as const, gap: '6px', alignItems: 'center' },
   placeholderHint: { fontSize: '13px', color: '#9ca3af' },
-  instructions: { display: 'flex', flexWrap: 'wrap' as const, gap: '8px 24px', padding: '12px 16px', backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb', fontSize: '13px', color: '#6b7280' },
-  editorContent: { display: 'flex', flexDirection: 'column' as const, gap: '20px' },
-  editorField: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
-  editorLabel: { fontSize: '14px', fontWeight: '500', color: '#374151' },
+  instructions: { display: 'flex', flexWrap: 'wrap' as const, gap: '8px 24px', paddingTop: '16px', fontSize: '13px', color: '#6b7280' },
+  editorContent: { display: 'flex', flexDirection: 'column' as const, gap: '16px' },
+  editorField: { display: 'flex', flexDirection: 'column' as const, gap: '8px' },
+  editorLabel: { fontSize: '14px', fontWeight: '500', color: '#101828' },
   dropdownWrapper: { position: 'relative' as const },
-  dropdownButton: { width: '100%', minWidth: 0, padding: '10px 14px', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', textAlign: 'left' as const },
+  dropdownButton: { width: '100%', minWidth: 0, padding: '10px 16px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '14px', color: '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', textAlign: 'left' as const },
   dropdownArrow: { fontSize: '10px', color: '#6b7280' },
   dropdownMenu: { position: 'absolute' as const, top: '100%', left: 0, right: 0, marginTop: '4px', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto' as const, zIndex: 10 },
   dropdownItem: { width: '100%', padding: '10px 14px', backgroundColor: 'transparent', border: 'none', textAlign: 'left' as const, fontSize: '14px', color: '#1f2937', cursor: 'pointer' },
-  valueInput: { width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', color: '#1f2937', outline: 'none', boxSizing: 'border-box' as const },
+  valueInput: { width: '100%', padding: '10px 16px', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '14px', color: '#1f2937', outline: 'none', boxSizing: 'border-box' as const },
   confidenceBar: { display: 'flex', alignItems: 'center', gap: '12px' },
   confidenceTrack: { flex: 1, height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', position: 'relative' as const, overflow: 'visible' },
   confidenceFill: { height: '100%', borderRadius: '4px', transition: 'width 0.3s ease' },
   confidenceThumb: { position: 'absolute' as const, top: '-4px', width: '16px', height: '16px', borderRadius: '50%', transform: 'translateX(-50%)', transition: 'left 0.3s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' },
   confidenceText: { fontSize: '14px', fontWeight: '600', color: '#1f2937', minWidth: '36px' },
   difficultyGroup: { display: 'flex', flexWrap: 'wrap' as const, gap: '8px' },
-  difficultyButton: { flex: '1 1 110px', padding: '8px 20px', backgroundColor: 'white', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#6b7280', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' },
+  difficultyButton: { flex: '1 1 110px', padding: '8px 16px', backgroundColor: 'white', border: '2px solid #e5e7eb', borderRadius: '12px', fontSize: '14px', color: '#101828', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' },
   difficultyButtonActive: { borderColor: '#3b82f6', color: '#3b82f6', backgroundColor: '#eff6ff' },
   editorActions: { display: 'flex', flexDirection: 'column' as const, gap: '12px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' },
-  btnConfirm: { width: '100%', padding: '12px 24px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  btnFix: { width: '100%', padding: '12px 24px', backgroundColor: 'white', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', textAlign: 'center' as const },
-  btnTrain: { width: '100%', padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', textAlign: 'center' as const },
-  qualitySection: { minWidth: 0, backgroundColor: 'white', borderRadius: '12px', padding: 'clamp(16px, 2vw, 24px)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  qualityTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 20px 0', color: '#1f2937' },
-  qualityGrid: { display: 'flex', flexDirection: 'column' as const, gap: '24px' },
-  qualityRow: { display: 'flex', flexDirection: 'column' as const, gap: '8px' },
+  actionSuccess: { padding: '10px 12px', borderRadius: '10px', backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', fontSize: '14px', fontWeight: '500' },
+  actionError: { padding: '10px 12px', borderRadius: '10px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: '14px', fontWeight: '500' },
+  btnDisabled: { opacity: 0.65, cursor: 'not-allowed' },
+  btnConfirm: { width: '100%', padding: '12px 24px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  btnFix: { width: '100%', padding: '12px 24px', backgroundColor: 'white', color: '#101828', border: '2px solid #e5e7eb', borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textAlign: 'center' as const },
+  btnTrain: { width: '100%', padding: '12px 24px', backgroundColor: '#2563EB', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textAlign: 'center' as const },
+  qualitySection: { minWidth: 0, backgroundColor: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 24px rgba(16,24,40,0.06)' },
+  qualityTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 16px 0', color: '#101828' },
+  qualityGrid: { display: 'flex', flexDirection: 'column' as const, gap: '12px' },
+  qualityRow: { display: 'flex', flexDirection: 'column' as const, gap: '8px', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' },
   qualityRowLabel: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: '8px 16px' },
   qualityRowRight: { display: 'flex', alignItems: 'center', flexWrap: 'wrap' as const, gap: '8px 12px' },
-  qualityFieldName: { fontSize: '15px', fontWeight: '500', color: '#1f2937', overflowWrap: 'anywhere' as const },
-  qualitySamples: { fontSize: '13px', color: '#6b7280' },
-  qualityPct: { fontSize: '18px', fontWeight: '700' },
-  qualityTrack: { width: '100%', height: '10px', backgroundColor: '#e5e7eb', borderRadius: '5px', overflow: 'hidden' },
-  qualityFill: { height: '100%', borderRadius: '5px', transition: 'width 0.6s ease' },
+  qualityFieldName: { fontSize: '14px', fontWeight: '500', color: '#101828', overflowWrap: 'anywhere' as const },
+  qualitySamples: { fontSize: '12px', color: '#6b7280' },
+  qualityPct: { fontSize: '14px', fontWeight: '600' },
+  qualityTrack: { width: '100%', height: '8px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden' },
+  qualityFill: { height: '100%', borderRadius: '999px', transition: 'width 0.6s ease' },
 } as const
 
 export default TrainingPage

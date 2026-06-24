@@ -162,19 +162,6 @@ const getStatusColor = () => {
     URL.revokeObjectURL(url)
   }
 
-  const handleFieldUpdate = async (fieldKey: string, newValue: string) => {
-  if (!id) return;
-  try {
-    await updateDocumentField(id, fieldKey, newValue);
-    setDocument(prev => prev ? {
-      ...prev,
-      fields: prev.fields?.map(f => f.fieldKey === fieldKey ? { ...f, correctedValue: newValue } : f) || []
-    } : prev);
-  } catch (err) {
-    console.error('Ошибка сохранения:', err);
-  }
-};
-
   if (loading) return <div style={styles.loading}>Загрузка...</div>
 
   if (error || !document) return (
@@ -205,13 +192,13 @@ const getStatusColor = () => {
           <span style={{ ...styles.statusBadge, color: getStatusColor() }}>{getStatusText()}</span>
         </div>
         <div style={styles.actions}>
-          <button onClick={handleValidate} disabled={isValidating}
-            style={{ ...styles.saveButton, opacity: isValidating ? 0.6 : 1, cursor: isValidating ? 'not-allowed' : 'pointer' }}>
+          <button onClick={handleValidate} disabled={isValidating || isConfirming}
+            style={{ ...styles.saveButton, opacity: (isValidating || isConfirming) ? 0.6 : 1, cursor: (isValidating || isConfirming) ? 'not-allowed' : 'pointer' }}>
             <SaveOutlined style={styles.buttonIcon} />
             {isValidating ? 'Сохранение...' : 'Сохранить'}
           </button>
-          <button onClick={handleConfirm} disabled={isConfirming}
-            style={{ ...styles.confirmButton, opacity: isConfirming ? 0.6 : 1, cursor: isConfirming ? 'not-allowed' : 'pointer' }}>
+          <button onClick={handleConfirm} disabled={isConfirming || isValidating}
+            style={{ ...styles.confirmButton, opacity: (isConfirming || isValidating) ? 0.6 : 1, cursor: (isConfirming || isValidating) ? 'not-allowed' : 'pointer' }}>
             <CheckCircleOutlined style={styles.buttonIcon} />
             {isConfirming ? 'Сохранение...' : 'Подтвердить данные'}
           </button>

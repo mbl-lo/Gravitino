@@ -37,6 +37,7 @@ const UploadPage = () => {
   };
 
   const handleUpload = async () => {
+    if (isUploading) return;
     if (selectedFiles.length === 0) {
       setMessage({ text: 'Выберите хотя бы один файл для загрузки', isError: true });
       return;
@@ -128,7 +129,7 @@ const UploadPage = () => {
         <div className="settings-grid">
           <div className="setting-item">
             <label>Тип документа</label>
-            <select>
+            <select value={documentType} onChange={e => setDocumentType(e.target.value)}>
               <option>Путевой лист легкового автомобиля</option>
               <option>Путевой лист грузового автомобиля</option>
               <option>Сводный путевой лист</option>
@@ -136,7 +137,7 @@ const UploadPage = () => {
           </div>
           <div className="setting-item">
             <label>Подразделение</label>
-            <select>
+            <select value={division} onChange={e => setDivision(e.target.value)}>
               <option>Центральный парк</option>
               <option>Северный парк</option>
               <option>Западный филиал</option>
@@ -244,7 +245,7 @@ const UploadPage = () => {
 
       {/* Прямоугольник 3: нижняя панель */}
       <div className="action-bar">
-        <button className="btn-cancel" onClick={handleCancel}> Отменить</button>
+        <button className="btn-cancel" onClick={handleCancel} disabled={isUploading}> Отменить</button>
         <button className="btn-submit" onClick={handleUpload} disabled={isUploading || selectedFiles.length === 0}>
           {isUploading ? 'Загрузка...' : 'Запустить распознавание'}
         </button>
