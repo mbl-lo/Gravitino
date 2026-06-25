@@ -124,6 +124,8 @@ model Document {
   confirmedById    String?           @map("confirmed_by_id") @db.Uuid
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
+  isInTrainingSet  Boolean           @default(false) @map("is_in_training_set")
+  trainingSetAddedAt DateTime?       @map("training_set_added_at") @db.Timestamp(6)
   confirmedBy      User?             @relation("DocumentConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
   driver           Driver?           @relation(fields: [driverId], references: [id], onDelete: SetNull)
   uploadedBy       User              @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
