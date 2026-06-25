@@ -201,6 +201,46 @@ export class DocumentsController {
     return this.documentsService.updateFields(id, fieldKey, value, user.id);
   }
 
+  @Get('training/statistics')
+  @UseGuards(JwtAuthGuard)
+  async getTrainingStatistics() {
+    return this.documentsService.getTrainingStatistics();
+  }
+
+  @Get('training/documents')
+  @UseGuards(JwtAuthGuard)
+  async getTrainingDocumentsList(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    return this.documentsService.getTrainingDocumentsList({
+      search,
+      status,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
+  }
+
+  @Get('training/documents/:id')
+  @UseGuards(JwtAuthGuard)
+  async getTrainingDocument(@Param('id') id: string) {
+    return this.documentsService.getTrainingDocument(id);
+  }
+
+  @Post('training/documents/:id/confirm-labeling')
+  @UseGuards(JwtAuthGuard)
+  async confirmLabeling(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.documentsService.confirmLabeling(id, user.id);
+  }
+
+  @Post('training/documents/:id/add-to-training-set')
+  @UseGuards(JwtAuthGuard)
+  async addToTrainingSet(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.documentsService.addToTrainingSet(id, user.id);
+  }
+
   @Post(':id/validate')
   async validateDocument(@Param('id') id: string) {
     return this.anomaliesService.validateDocument(id);
