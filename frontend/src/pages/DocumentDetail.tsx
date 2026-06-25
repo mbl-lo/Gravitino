@@ -22,6 +22,7 @@ const DocumentDetail = () => {
   const [isValidating, setIsValidating] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
+  const [actionError, setActionError] = useState(false)
   const loadDocumentRef = useRef<() => Promise<void>>(() => Promise.resolve())
   const [editedFields, setEditedFields] = useState<Record<string, string>>({})
 
@@ -48,6 +49,7 @@ const DocumentDetail = () => {
     if (!id) return
     setIsValidating(true)
     setActionMessage('')
+    setActionError(false)
     try {
       const updatePromises = Object.entries(editedFields).map(([fieldKey, value]) =>
         updateDocumentField(id, fieldKey, value)
@@ -62,8 +64,9 @@ const DocumentDetail = () => {
       setEditedFields({});
       await loadDocument()
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } }
-      setActionMessage(error.response?.data?.error || 'Ошибка при проверке')
+      const error = err as { response?: { data?: { message?: string } } }
+      setActionMessage(error.response?.data?.message || 'Ошибка при проверке')
+      setActionError(true)
     } finally {
       setIsValidating(false)
     }
@@ -73,13 +76,15 @@ const DocumentDetail = () => {
     if (!id) return
     setIsConfirming(true)
     setActionMessage('')
+    setActionError(false)
     try {
       await documentsService.confirmDocument(id)
       setActionMessage('Документ подтверждён')
       await loadDocument()
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } }
-      setActionMessage(error.response?.data?.error || 'Ошибка при подтверждении')
+      const error = err as { response?: { data?: { message?: string } } }
+      setActionMessage(error.response?.data?.message || 'Ошибка при подтверждении')
+      setActionError(true)
     } finally {
       setIsConfirming(false)
     }
@@ -212,8 +217,8 @@ const getStatusColor = () => {
       {actionMessage && (
         <div style={{
           padding: '12px 16px', borderRadius: '8px', marginBottom: '16px',
-          backgroundColor: actionMessage.includes('Ошибка') ? '#fef2f2' : '#ecfdf5',
-          color: actionMessage.includes('Ошибка') ? '#dc2626' : '#059669',
+          backgroundColor: actionError ? '#fef2f2' : '#ecfdf5',
+          color: actionError ? '#dc2626' : '#059669',
           fontSize: '14px', fontWeight: '500'
         }}>{actionMessage}</div>
       )}

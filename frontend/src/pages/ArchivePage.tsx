@@ -16,7 +16,7 @@ interface AuditEntry {
 
 const actionLabels: Record<string, string> = {
   FIELD_UPDATED: 'Поле изменено',
-  DOCUMENT_CONFIRMED: 'Документ подтверждён',
+  CONFIRMED: 'Документ подтверждён',
   DOCUMENT_CREATED: 'Документ создан',
   DOCUMENT_VALIDATED: 'Документ проверен',
   OCR_STARTED: 'Распознавание запущено',
@@ -117,7 +117,8 @@ const ArchivePage = () => {
   }
 
   const handleHistoryChange = async (doc: Document) => {
-    setSelectedDocNumber(doc.documentNumber || doc.id.substring(0, 8))
+    const docNum = getField(doc, 'document_number')
+    setSelectedDocNumber(docNum !== '—' ? docNum : `ID-${doc.id.substring(0, 8)}`)
     setModalOpen(true)
     setAuditLoading(true)
     try {
