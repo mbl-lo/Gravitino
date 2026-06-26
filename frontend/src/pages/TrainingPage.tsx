@@ -66,11 +66,18 @@ const TrainingPage = () => {
     const fetchData = async () => {
       try {
         const [statsRes, docsRes] = await Promise.all([getTrainingStats(), getTrainingDocuments()])
-        setStats(statsRes.data)
+        const statsRaw = statsRes.data as any
+        console.log('STATS RAW:', statsRaw)
+        setStats({
+          labeledFields: statsRaw.labeledFields ?? 0,
+          modelAccuracy: statsRaw.modelAccuracy ?? 0,
+          needsLabeling: statsRaw.documentsPendingLabeling ?? 0,
+          lastTraining: statsRaw.lastTrainingDate ?? '',
+        })
         setDocuments(docsRes.data)
         if (docsRes.data.length > 0) setCurrentDocument(docsRes.data[0])
-      } catch {
-        // fallback to empty data
+      } catch (err) {
+        console.error('TRAINING ERROR:', err)
       } finally {
         setIsLoading(false)
       }
@@ -122,10 +129,10 @@ const TrainingPage = () => {
 
   const getStatValue = (key: string) => {
     switch (key) {
-      case 'labeledFields': return stats.labeledFields.toLocaleString()
-      case 'modelAccuracy': return `${stats.modelAccuracy}%`
-      case 'needsLabeling': return stats.needsLabeling.toLocaleString()
-      case 'lastTraining': return stats.lastTraining || '—'
+      case 'labeledFields': return ((stats as any).labeledFields ?? 0).toLocaleString()
+      case 'modelAccuracy': return `${(stats as any).modelAccuracy ?? 0}%`
+      case 'needsLabeling': return ((stats as any).documentsPendingLabeling ?? (stats as any).needsLabeling ?? 0).toLocaleString()
+      case 'lastTraining': return (stats as any).lastTrainingDate || (stats as any).lastTraining || '—'
       default: return ''
     }
   }

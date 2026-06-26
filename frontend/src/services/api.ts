@@ -1,16 +1,15 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',  // Прокси на localhost:3000
+  baseURL: 'http://localhost:3000',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true,  // Для cookies если нужны
+  withCredentials: true,
 })
 
-// Добавляем токен к каждому запросу
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('auth_token')
@@ -22,7 +21,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Обрабатываем ошибки
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -41,10 +39,6 @@ api.interceptors.response.use(
 
 // --- ЗАГРУЗКА ФАЙЛОВ (UploadPage) ---
 
-/**
- * Загрузка одного или нескольких файлов на сервер
- * @param files - массив File объектов
- */
 export const uploadDocuments = (files: File[], metadata: { documentType: string; division: string; tripDate: string }) => {
   const formData = new FormData()
 
@@ -70,43 +64,41 @@ export const uploadDocuments = (files: File[], metadata: { documentType: string;
 
 // --- ОЧЕРЕДЬ ОБРАБОТКИ (QueuePage) ---
 
-/** Тип документа в очереди */
-// services/api.ts
-
 export interface QueueDocument {
   id: string
   name: string
   size: number
-  status: 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error'  // ← обновлено
+  status: 'uploaded' | 'processing' | 'needs_review' | 'confirmed' | 'error'
   progress: number
   added: string
 }
 
-/**
- * Получение текущей очереди обработки
- */
 export const getQueue = () => {
   return api.get<QueueDocument[]>('/documents')
 }
 
-/**
- * Удаление документа из очереди
- * @param id - идентификатор документа
- */
 export const removeFromQueue = (id: string) => {
   return api.delete(`/documents/${encodeURIComponent(id)}`)
 }
 
-/**
- * Очистка всех завершённых документов из очереди
- */
 export const clearCompleted = () => {
   return api.delete('/documents/completed')
 }
 
+export const runOcr = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/run-ocr`)
+}
+
+export const validateDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/validate`)
+}
+
+export const confirmDocument = (documentId: string) => {
+  return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
+}
+
 // --- ДАШБОРД (DashboardPage) ---
 
-/** Тип для карточек статистики */
 export interface DashboardStats {
   total: number
   processing: number
@@ -120,7 +112,6 @@ export interface DashboardStats {
   }
 }
 
-/** Тип для элемента последних документов */
 export interface RecentDocument {
   id: string
   name: string
@@ -128,15 +119,11 @@ export interface RecentDocument {
   status: 'waiting' | 'processing' | 'completed' | 'error'
 }
 
-/** Тип для данных графика по дням */
 export interface DailyStats {
   day: string
   count: number
 }
 
-/**
- * Получение общей статистики для дашборда
- */
 export const getDashboardStats = () => {
   return api.get<DashboardStats>('/dashboard/stats')
 }
@@ -144,43 +131,25 @@ export const getDashboardStats = () => {
 export const getDashboardTrends = () => {
   return api.get('/dashboard/trends')
 }
-/**
- * Получение списка последних документов
- * @param limit - количество документов (по умолчанию 5)
- */
+
 export const getRecentDocuments = (limit: number = 5) => {
   return api.get<RecentDocument[]>(`/dashboard/recent?limit=${limit}`)
 }
 
-/**
- * Получение статистики обработки по дням недели
- */
 export const getDailyStats = () => {
   return api.get<DailyStats[]>('/dashboard/daily')
 }
+
 // --- АНОМАЛИИ ---
+
 export const getAnomalies = () => {
   return api.get('/documents/anomalies/all')
 }
 
-// --- ЗАПУСК РАСПОЗНАВАНИЯ (OCR) ---
-export const runOcr = (documentId: string) => {
-  return api.post(`/documents/${encodeURIComponent(documentId)}/run-ocr`)
-}
+// ============================================================
+// ОБУЧАЮЩИЕ ДАННЫЕ (TrainingPage)
+// ============================================================
 
-// --- ПРОВЕРИТЬ ДОКУМЕНТ (валидация) ---
-export const validateDocument = (documentId: string) => {
-  return api.post(`/documents/${encodeURIComponent(documentId)}/validate`)
-}
-
-// --- ПОДТВЕРДИТЬ ДОКУМЕНТ ---
-export const confirmDocument = (documentId: string) => {
-  return api.post(`/documents/${encodeURIComponent(documentId)}/confirm`)
-}
-
-// --- ОБУЧАЮЩИЕ ДАННЫЕ (TrainingPage) ---
-
-/** Тип для статистики обучения */
 export interface TrainingStats {
   labeledFields: number
   modelAccuracy: number
@@ -188,7 +157,6 @@ export interface TrainingStats {
   lastTraining: string
 }
 
-/** Тип для размеченного поля */
 export interface LabeledField {
   id: string
   documentId: string
@@ -201,7 +169,6 @@ export interface LabeledField {
   labeledBy: string
 }
 
-/** Тип для документа на разметке */
 export interface TrainingDocument {
   id: string
   name: string
@@ -210,54 +177,23 @@ export interface TrainingDocument {
   labeledFields: number
 }
 
-/**
- * Получение статистики обучения
- */
-export const getTrainingStats = () => {
-  return api.get<TrainingStats>('/training/stats')
-}
+export const getTrainingStats = () => api.get<TrainingStats>('/documents/training/statistics')
 
-/**
- * Получение документа для разметки
- */
-export const getTrainingDocument = (documentId: string) => {
-  return api.get<TrainingDocument>(`/training/documents/${encodeURIComponent(documentId)}`)
-}
+export const getTrainingDocuments = () => api.get<TrainingDocument[]>('/documents/training/documents')
 
-/**
- * Получение списка документов для разметки
- */
-export const getTrainingDocuments = () => {
-  return api.get<TrainingDocument[]>('/training/documents')
-}
+export const getTrainingDocument = (documentId: string) =>
+  api.get<TrainingDocument>(`/documents/training/documents/${encodeURIComponent(documentId)}`)
 
-/**
- * Сохранение размеченного поля
- * @param field - данные размеченного поля
- */
 export const saveLabeledField = (field: Omit<LabeledField, 'id' | 'labeledAt' | 'labeledBy'>) => {
   return api.post<LabeledField>('/training/fields', field)
 }
 
-/**
- * Подтверждение разметки документа
- * @param documentId - ID документа
- */
-export const confirmTraining = (documentId: string) => {
-  return api.post(`/training/documents/${encodeURIComponent(documentId)}/confirm`)
-}
+export const confirmTraining = (documentId: string) =>
+  api.post(`/documents/training/documents/${encodeURIComponent(documentId)}/confirm-labeling`)
 
-/**
- * Добавление документа в обучающий набор
- * @param documentId - ID документа
- */
-export const addToTrainingSet = (documentId: string) => {
-  return api.post(`/training/documents/${encodeURIComponent(documentId)}/add-to-set`)
-}
+export const addToTrainingSet = (documentId: string) =>
+  api.post(`/documents/training/documents/${encodeURIComponent(documentId)}/add-to-training-set`)
 
-/**
- * Запуск обучения модели
- */
 export const startTraining = () => {
   return api.post('/training/start')
 }
@@ -278,17 +214,14 @@ export interface SystemSettings {
   enable2FA: boolean
 }
 
-/** Получить текущие настройки системы */
 export const getSystemSettings = () => {
   return api.get<SystemSettings>('/settings')
 }
 
-/** Сохранить измененные настройки */
 export const updateSystemSettings = (settings: SystemSettings) => {
   return api.post('/settings', settings)
 }
 
-/** Получить список всех пользователей системы */
 export const getUsers = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return api.get<any[]>('/users')
