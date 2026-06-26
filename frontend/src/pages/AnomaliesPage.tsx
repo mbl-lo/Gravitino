@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAnomalies } from '../services/api';
+import { getAnomalies, rejectAnomaly } from '../services/api';
 
 // Тип под данные с бэкенда
 interface BackendAnomaly {
@@ -95,10 +95,21 @@ const AnomaliesPage = () => {
   useEffect(() => { fetchRef.current = fetchAnomalies; }, [fetchAnomalies]);
   useEffect(() => { fetchRef.current(); }, []);
 
+  const handleReject = async (anomalyId: string) => {
+    try {
+      await rejectAnomaly(anomalyId);
+      setAnomalies(prev => prev.map(a => a.id === anomalyId ? { ...a, status: 'rejected' } : a));
+      setSelectedId(null);
+    } catch (err) {
+      console.error('Ошибка при отклонении аномалии:', err);
+    }
+  };
+
   // Получаем уникальные типы аномалий для фильтра
   const filtered = anomalies.filter(a => {
     if (filterSeverity !== 'all' && a.severity !== filterSeverity) return false;
     if (filterType !== 'all' && a.type !== filterType) return false;
+    if (filterStatus === 'all' && a.status === 'rejected') return false;
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
     if (filterDate && a.detectedAt?.slice(0, 10) !== filterDate) return false;
     return true;
@@ -220,6 +231,7 @@ const AnomaliesPage = () => {
               <option value="open">Открыто</option>
               <option value="review">На проверке</option>
               <option value="fixed">Исправлено</option>
+              <option value="rejected">Отклонено</option>
             </select>
           </div>
           
@@ -335,7 +347,7 @@ const AnomaliesPage = () => {
                       Открыть документ
                     </button>
                     <button className="detail-btn detail-btn-success">Пометить как исправлено</button>
-                    <button className="detail-btn detail-btn-outline">Отклонить</button>
+                    <button className="detail-btn detail-btn-outline" onClick={() => handleReject(selectedAnomaly.id)}>Отклонить</button>
                   </div>
                 </>
               )}

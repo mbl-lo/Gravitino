@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { documentsService, Document } from '../services/documents'
 import { HistoryOutlined, EyeOutlined } from '@ant-design/icons'
 import { getAuditDocumentHistory } from '../audit/document-history'
+import { getSystemSettings } from '../services/api'
 
 interface AuditEntry {
   id: string
@@ -76,6 +77,7 @@ const ArchivePage = () => {
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
   const [auditLoading, setAuditLoading] = useState(false)
   const [selectedDocNumber, setSelectedDocNumber] = useState('')
+  const [minConfidence, setMinConfidence] = useState(85)
 
   const loadDocumentsRef = useRef<() => Promise<void>>(() => Promise.resolve())
 
@@ -103,6 +105,10 @@ const ArchivePage = () => {
 
   useEffect(() => {
     loadDocumentsRef.current()
+  }, [])
+
+  useEffect(() => {
+    getSystemSettings().then(res => setMinConfidence(res.data.minConfidence)).catch(() => {})
   }, [])
 
   const handleReset = () => {
@@ -318,10 +324,16 @@ const ArchivePage = () => {
                   const fuel = getField(doc, 'fuel_consumption')
                   const accuracy = doc.ocrConfidence ? Math.round(doc.ocrConfidence * 100) : 100
                   let accClass = 'acc-green'
-                  if (accuracy < 95) accClass = 'acc-orange'
-                  if (accuracy < 80) accClass = 'acc-red'
+                  if (accuracy < minConfidence) accClass = 'acc-orange'
+                  if (accuracy < minConfidence - 10) accClass = 'acc-red'
 
-                  const anomaliesCount = doc.anomalies ? doc.anomalies.length : 0
+                  const activeAnomalies = doc.anomalies?.filter(a => a.status !== 'rejected') ?? []
+                  const anomaliesCount = activeAnomalies.length
+                  const worstSeverity = activeAnomalies.some(a => a.severity === 'critical')
+                    ? 'critical'
+                    : activeAnomalies.some(a => a.severity === 'medium')
+                    ? 'medium'
+                    : 'low'
 
                   return (
                     <tr key={doc.id}>
@@ -336,7 +348,7 @@ const ArchivePage = () => {
                       </td>
                       <td onClick={() => navigate(`/documents/${doc.id}`)}>
                         {anomaliesCount > 0 ? (
-                          <span className="anomaly-badge">{anomaliesCount}</span>
+                          <span className={`anomaly-badge anomaly-badge-${worstSeverity}`}>{anomaliesCount}</span>
                         ) : (
                           <span style={{ color: '#94a3b8' }}>—</span>
                         )}
@@ -495,7 +507,10 @@ const ArchivePage = () => {
         .acc-orange { background-color: #fffbeb; color: #d97706; }
         .acc-red { background-color: #fef2f2; color: #dc2626; }
         
-        .anomaly-badge { background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 700; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+        .anomaly-badge { font-weight: 700; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+        .anomaly-badge-critical { background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .anomaly-badge-medium { background-color: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+        .anomaly-badge-low { background-color: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; }
         .actions-cell { display: flex; align-items: center; gap: 6px; font-size: 15px; white-space: nowrap; }
         .action-icon-btn { flex: 0 0 auto; background: none; border: none; cursor: pointer; padding: 2px; opacity: 0.65; transition: opacity 0.15s, transform 0.1s; }
         .action-icon-btn:hover { opacity: 1; transform: scale(1.15); }
