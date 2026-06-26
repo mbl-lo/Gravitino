@@ -11,6 +11,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 import { documentsService, Document, updateDocumentField } from '../services/documents'
+import { getSystemSettings } from '../services/api'
 
 const DocumentDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -25,11 +26,13 @@ const DocumentDetail = () => {
   const [actionError, setActionError] = useState(false)
   const loadDocumentRef = useRef<() => Promise<void>>(() => Promise.resolve())
   const [editedFields, setEditedFields] = useState<Record<string, string>>({})
+  const [minConfidence, setMinConfidence] = useState(85)
 
   const loadDocument = useCallback(async () => {
     try {
       const data = await documentsService.getDocumentById(id!)
       setDocument(data)
+      setImageError(false)
     } catch {
       setError('Ошибка загрузки документа')
     } finally {
@@ -40,6 +43,10 @@ const DocumentDetail = () => {
   useEffect(() => {
     loadDocumentRef.current = loadDocument
   }, [loadDocument])
+
+  useEffect(() => {
+    getSystemSettings().then(res => setMinConfidence(res.data.minConfidence)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (id) loadDocumentRef.current()
@@ -245,25 +252,25 @@ const getStatusColor = () => {
             ['Подразделение', 'division'], ['Водитель', 'driver_name'], ['Табельный номер', 'driver_number'],
             ['Автомобиль', 'vehicle_model'], ['Госномер', 'vehicle_plate'],
             ['Маршрут', 'route'],
-          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} minConfidence={minConfidence} />
 
           <Section title="Пробег" fields={[
             ['Спидометр при выезде', 'odometer_start'], ['Спидометр при возвращении', 'odometer_end'],
             ['Расчетный пробег', calculatedMileage, true],
             ['Пробег по маршруту', 'mileage'],
-          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} minConfidence={minConfidence} />
 
           <Section title="Топливо" fields={[
             ['Остаток при выезде', 'fuel_start'], ['Выдано топлива', 'fuel_issued'],
             ['Остаток при возвращении', 'fuel_end'], ['Расчетный расход', 'fuel_consumption'],
             ['Норма расхода', 'fuel_rate'],
             ['Отклонение', 'fuel_deviation'],
-          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} minConfidence={minConfidence} />
 
           <Section title="Время работы" fields={[
             ['Время выезда', 'departure_time'], ['Время возвращения', 'arrival_time'],
             ['Общее время работы', 'total_hours'], ['Время простоя', 'downtime_hours'],
-          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} />
+          ]} doc={document} onChangeField={(key, value) => setEditedFields(prev => ({ ...prev, [key]: value }))} v={v} minConfidence={minConfidence} />
 
           <div style={styles.section}>
             <h3 style={styles.signatureTitle}>Подписи и отметки</h3>
@@ -332,26 +339,27 @@ const getStatusColor = () => {
 }
 
 const getFieldConfidence = (doc: Document, key: string) => {
-  const confidence = doc.fields?.find(field => field.fieldKey === key)?.confidence
-  if (typeof confidence !== 'number') return null
+  const raw = doc.fields?.find(field => field.fieldKey === key)?.confidence
+  const confidence = typeof raw === 'string' ? parseFloat(raw) : raw
+  if (typeof confidence !== 'number' || Number.isNaN(confidence)) return null
   return confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence)
 }
 
-const getFieldBorderColor = (key: string, isStatic?: boolean) => {
-  if (isStatic || ['date', 'organization', 'division', 'driver_name', 'driver_number', 'vehicle_model', 'vehicle_plate', 'route'].includes(key)) return '#E5E7EB'
-  if (['fuel_consumption', 'fuel_deviation'].includes(key)) return '#DC2626'
-  if (['mileage', 'fuel_start', 'fuel_end', 'arrival_time', 'downtime_hours'].includes(key)) return '#F59E0B'
-  if (['odometer_start', 'odometer_end', 'fuel_issued', 'departure_time'].includes(key)) return '#16A34A'
-  return '#E5E7EB'
+const getFieldBorderColor = (confidence: number | null, minConfidence: number) => {
+  if (confidence === null) return '#E5E7EB'
+  if (confidence >= minConfidence) return '#16A34A'
+  if (confidence >= minConfidence - 10) return '#F59E0B'
+  return '#DC2626'
 }
 
-const Section = ({ title, titleIcon, fields, doc, onChangeField, v }: {
+const Section = ({ title, titleIcon, fields, doc, onChangeField, v, minConfidence }: {
   title: string
   titleIcon?: React.ReactNode
   fields: [string, string, boolean?][]
   doc: Document
   onChangeField: (key: string, val: string) => void
   v: (key: string) => string
+  minConfidence: number
 }) => (
   <div style={styles.formSection}>
     <h3 style={styles.formSectionTitle}>
@@ -378,7 +386,7 @@ const Section = ({ title, titleIcon, fields, doc, onChangeField, v }: {
                 }}
                 style={{
                   ...styles.formInput,
-                  borderColor: getFieldBorderColor(key, isStatic),
+                  borderColor: getFieldBorderColor(confidence, minConfidence),
                   ...(isStatic ? styles.formInputDisabled : {}),
                 }}
               />

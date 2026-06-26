@@ -44,8 +44,9 @@ const statusMeta: Record<QueueRow['displayStatus'], { label: string; className: 
 const getDisplayStatus = (doc: Document): QueueRow['displayStatus'] => {
   if (doc.ocrStatus === 'processing' || doc.status === 'processing') return 'processing'
   if (doc.ocrStatus === 'error' || doc.status === 'error') return 'error'
+  if (doc.status === 'confirmed' || doc.status === 'processed') return 'confirmed'
   if (doc.status === 'needs_review' || doc.hasAnomalies) return 'needs_review'
-  if (doc.status === 'confirmed' || doc.status === 'processed' || doc.ocrStatus === 'completed') return 'confirmed'
+  if (doc.ocrStatus === 'completed') return 'confirmed'
   return 'uploaded'
 }
 

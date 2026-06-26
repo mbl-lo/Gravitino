@@ -179,7 +179,7 @@ export class DocumentsController {
     const fileStream = createReadStream(absolutePath);
     
     res.set({
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': document.fileMimeType || 'application/octet-stream',
       'Content-Disposition': `inline; filename="${document.originalFileName}"`,
     });
 

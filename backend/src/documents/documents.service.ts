@@ -1,218 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException   // === Training endpoints ===
-
-  async getTrainingStatistics() {
-    const totalFields = await this.prisma.documentField.count();
-    const labeledFields = await this.prisma.documentField.count({
-      where: {
-        OR: [
-          { correctedValue: { not: null } },
-          { isEdited: true }
-        ]
-      }
-    });
-    const unlabeledFields = totalFields - labeledFields;
-
-    // Documents that have at least one unlabeled field or are not confirmed
-    const documentsPendingLabeling = await this.prisma.document.count({
-      where: {
-        OR: [
-          { status: { not: 'confirmed' } },
-          {
-            fields: {
-              some: {
-                OR: [
-                  { correctedValue: null },
-                  { isEdited: false }
-                ]
-              }
-            }
-          }
-        ]
-      }
-    });
-
-    const lastTrainingDateResult = await this.prisma.document.findFirst({
-      where: {
-        isInTrainingSet: true
-      },
-      orderBy: {
-        trainingSetAddedAt: 'desc'
-      },
-      select: {
-        trainingSetAddedAt: true
-      }
-    });
-
-    return {
-      totalFields,
-      labeledFields,
-      unlabeledFields,
-      documentsPendingLabeling,
-      lastTrainingDate: lastTrainingDateResult?.trainingSetAddedAt || null
-    };
-  }
-
-  async getTrainingDocumentsList(filters?: {
-    search?: string;
-    status?: string;
-    fromDate?: Date;
-    toDate?: Date;
-  }) {
-    const where: any = {
-      OR: [
-        { status: { not: 'confirmed' } },
-        {
-          fields: {
-            some: {
-              OR: [
-                { correctedValue: null },
-                { isEdited: false }
-              ]
-            }
-          }
-        }
-      ]
-    };
-
-    if (filters?.search) {
-      where.OR = [
-        { documentNumber: { contains: filters.search, mode: 'insensitive' } },
-        { originalFileName: { contains: filters.search, mode: 'insensitive' } }
-      ];
-    }
-
-    if (filters?.status) {
-      where.status = filters.status;
-    }
-
-    if (filters?.fromDate) {
-      where.createdAt = { gte: filters.fromDate };
-    }
-
-    if (filters?.toDate) {
-      where.createdAt = { ...where.createdAt, lte: filters.toDate };
-    }
-
-    return this.prisma.document.findMany({
-      where,
-      include: {
-        fields: true,
-        anomalies: true,
-        uploadedBy: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-  }
-
-  async getTrainingDocument(id: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id },
-      include: {
-        fields: true,
-        anomalies: true,
-        uploadedBy: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true
-          }
-        },
-        driver: true,
-        vehicle: true
-      }
-    });
-
-    if (!document) {
-      throw new NotFoundException(`Документ с ID ${id} не найден`);
-    }
-
-    return document;
-  }
-
-  async confirmLabeling(id: string, userId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id }
-    });
-
-    if (!document) {
-      throw new NotFoundException(`Документ с ID ${id} не найден`);
-    }
-
-    // Check if all fields are labeled (have correctedValue or isEdited)
-    const unlabeledFields = await this.prisma.documentField.count({
-      where: {
-        documentId: id,
-        OR: [
-          { correctedValue: null },
-          { isEdited: false }
-        ]
-      }
-    });
-
-    if (unlabeledFields > 0) {
-      throw new BadRequestException(
-        `Невозможно подтвердить разметку: ${unlabeledFields} полей не размечены`
-      );
-    }
-
-    const updated = await this.prisma.document.update({
-      where: { id },
-      data: {
-        status: 'confirmed',
-        confirmedAt: new Date(),
-        confirmedById: userId
-      }
-    });
-
-    await this.auditService.logAction({
-      userId,
-      entityType: 'Document',
-      entityId: id,
-      action: 'CONFIRMED_LABELING'
-    });
-
-    return updated;
-  }
-
-  async addToTrainingSet(id: string, userId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id }
-    });
-
-    if (!document) {
-      throw new NotFoundException(`Документ с ID ${id} не найден`);
-    }
-
-    if (document.isInTrainingSet) {
-      throw new BadRequestException('Документ уже добавлен в обучающий набор');
-    }
-
-    const updated = await this.prisma.document.update({
-      where: { id },
-      data: {
-        isInTrainingSet: true,
-        trainingSetAddedAt: new Date()
-      }
-    });
-
-    await this.auditService.logAction({
-      userId,
-      entityType: 'Document',
-      entityId: id,
-      action: 'ADDED_TO_TRAINING_SET'
-    });
-
-    return updated;
-  }
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import * as ExcelJS from 'exceljs';
@@ -489,13 +275,13 @@ export class DocumentsService {
         data: {
           ocrStatus: 'completed',
           ocrConfidence: confidence,
-          status: 'processed',
+          status: 'needs_review',
           tripDate: ocr.date ? new Date(ocr.date) : undefined,
         },
       }),
     ]);
 
-    return { ...ocr, savedFields: fields.length, status: 'processed', ocrStatus: 'completed' };
+    return { ...ocr, savedFields: fields.length, status: 'needs_review', ocrStatus: 'completed' };
   }
 
   async updateFields(documentId: string, fieldKey: string, newValue: string, userId: string) {
@@ -560,6 +346,7 @@ export class DocumentsService {
       data: {
         status: 'confirmed',
         confirmedAt: new Date(),
+        hasAnomalies: false,
       },
     });
 
@@ -568,6 +355,144 @@ export class DocumentsService {
       entityType: 'Document',
       entityId: id,
       action: 'CONFIRMED',
+    });
+
+    return updated;
+  }
+
+  async getTrainingStatistics() {
+    const totalFields = await this.prisma.documentField.count();
+    const labeledFields = await this.prisma.documentField.count({
+      where: {
+        OR: [{ correctedValue: { not: null } }, { isEdited: true }],
+      },
+    });
+
+    const documentsPendingLabeling = await this.prisma.document.count({
+      where: {
+        OR: [
+          { status: { not: 'confirmed' } },
+          { fields: { some: { OR: [{ correctedValue: null }, { isEdited: false }] } } },
+        ],
+      },
+    });
+
+    const lastTrainingDateResult = await this.prisma.document.findFirst({
+      where: { isInTrainingSet: true },
+      orderBy: { trainingSetAddedAt: 'desc' },
+      select: { trainingSetAddedAt: true },
+    });
+
+    return {
+      totalFields,
+      labeledFields,
+      unlabeledFields: totalFields - labeledFields,
+      documentsPendingLabeling,
+      lastTrainingDate: lastTrainingDateResult?.trainingSetAddedAt || null,
+    };
+  }
+
+  async getTrainingDocumentsList(filters?: {
+    search?: string;
+    status?: string;
+    fromDate?: Date;
+    toDate?: Date;
+  }) {
+    const where: any = {};
+
+    if (filters?.search) {
+      where.OR = [
+        { documentNumber: { contains: filters.search, mode: 'insensitive' } },
+        { originalFileName: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+    if (filters?.status) where.status = filters.status;
+    if (filters?.fromDate) where.createdAt = { gte: filters.fromDate };
+    if (filters?.toDate) where.createdAt = { ...where.createdAt, lte: filters.toDate };
+
+    return this.prisma.document.findMany({
+      where,
+      include: {
+        fields: true,
+        anomalies: true,
+        uploadedBy: { select: { id: true, fullName: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getTrainingDocument(id: string) {
+    const document = await this.prisma.document.findUnique({
+      where: { id },
+      include: {
+        fields: true,
+        anomalies: true,
+        uploadedBy: { select: { id: true, fullName: true, email: true } },
+        driver: true,
+        vehicle: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Документ с ID ${id} не найден`);
+    }
+
+    return document;
+  }
+
+  async confirmLabeling(id: string, userId: string) {
+    const document = await this.prisma.document.findUnique({ where: { id } });
+
+    if (!document) {
+      throw new NotFoundException(`Документ с ID ${id} не найден`);
+    }
+
+    const unlabeledFields = await this.prisma.documentField.count({
+      where: { documentId: id, OR: [{ correctedValue: null }, { isEdited: false }] },
+    });
+
+    if (unlabeledFields > 0) {
+      throw new BadRequestException(
+        `Невозможно подтвердить разметку: ${unlabeledFields} полей не размечены`,
+      );
+    }
+
+    const updated = await this.prisma.document.update({
+      where: { id },
+      data: { status: 'confirmed', confirmedAt: new Date(), confirmedById: userId },
+    });
+
+    await this.auditService.logAction({
+      userId,
+      entityType: 'Document',
+      entityId: id,
+      action: 'CONFIRMED_LABELING',
+    });
+
+    return updated;
+  }
+
+  async addToTrainingSet(id: string, userId: string) {
+    const document = await this.prisma.document.findUnique({ where: { id } });
+
+    if (!document) {
+      throw new NotFoundException(`Документ с ID ${id} не найден`);
+    }
+
+    if (document.isInTrainingSet) {
+      throw new BadRequestException('Документ уже добавлен в обучающий набор');
+    }
+
+    const updated = await this.prisma.document.update({
+      where: { id },
+      data: { isInTrainingSet: true, trainingSetAddedAt: new Date() },
+    });
+
+    await this.auditService.logAction({
+      userId,
+      entityType: 'Document',
+      entityId: id,
+      action: 'ADDED_TO_TRAINING_SET',
     });
 
     return updated;

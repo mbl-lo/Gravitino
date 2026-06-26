@@ -294,4 +294,10 @@ export const getUsers = () => {
   return api.get<any[]>('/users')
 }
 
+export const rejectAnomaly = (anomalyId: string) => {
+  const userStr = localStorage.getItem('auth_user')
+  const user = userStr ? JSON.parse(userStr) : {}
+  return api.patch(`/anomalies/${anomalyId}/reject`, { userId: user.id })
+}
+
 export default api

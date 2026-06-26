@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -47,6 +47,17 @@ export class AnomaliesService {
     if (!document) {
       throw new NotFoundException(`Document with id ${documentId} not found`);
     }
+
+    const rejectedAnomalies = await this.prisma.anomaly.findMany({
+      where: {
+        documentId,
+        status: 'rejected',
+        type: { in: ['odometer_order', 'fuel_overrun', 'missing_signature', 'time_invalid'] },
+      },
+    });
+    const rejectedKeys = new Set(
+      rejectedAnomalies.map((a) => `${a.type}_${a.fieldKey || ''}`)
+    );
 
     const [odometerRule, fuelRule, signatureRule, timeRule] = await Promise.all(
       [
@@ -156,9 +167,14 @@ export class AnomaliesService {
       anomalies.push(timeAnomaly);
     }
 
+    const anomaliesToCreate = anomalies.filter(
+      (a) => !rejectedKeys.has(`${a.type}_${a.fieldKey}`)
+    );
+
     await this.prisma.anomaly.deleteMany({
       where: {
         documentId,
+        status: 'open',
         type: {
           in: [
             'odometer_order',
@@ -171,7 +187,7 @@ export class AnomaliesService {
     });
 
     const createdAnomalies = await Promise.all(
-      anomalies.map((anomaly) =>
+      anomaliesToCreate.map((anomaly) =>
         this.prisma.anomaly.create({
           data: {
             documentId,
@@ -473,6 +489,51 @@ export class AnomaliesService {
 
   private round(value: number) {
     return Math.round(value * 100) / 100;
+  }
+
+  async rejectAnomaly(anomalyId: string, userId: string) {
+    const anomaly = await this.prisma.anomaly.findUnique({
+      where: { id: anomalyId },
+    });
+
+    if (!anomaly) {
+      throw new NotFoundException(`Аномалия с ID ${anomalyId} не найдена`);
+    }
+
+    if (anomaly.status === 'rejected') {
+      throw new BadRequestException('Аномалия уже отклонена');
+    }
+
+    const updated = await this.prisma.anomaly.update({
+      where: { id: anomalyId },
+      data: {
+        status: 'rejected',
+        resolvedById: userId,
+        resolvedAt: new Date(),
+      },
+    });
+
+    await this.updateDocumentAnomaliesFlag(anomaly.documentId);
+
+    return updated;
+  }
+
+  private async updateDocumentAnomaliesFlag(documentId: string) {
+    const openCount = await this.prisma.anomaly.count({
+      where: { documentId, status: 'open' },
+    });
+
+    await this.prisma.document.update({
+      where: { id: documentId },
+      data: { hasAnomalies: openCount > 0 },
+    });
+  }
+
+  async getDocumentAnomalies(documentId: string) {
+    return this.prisma.anomaly.findMany({
+      where: { documentId },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async getAllAnomalies() {

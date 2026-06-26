@@ -75,6 +75,7 @@
 .file-status-badge.ready { background: #ecfdf5; color: #16A34A; }
 .file-status-badge.low-quality { background: #fff7ed; color: #F59E0B; }
 .file-status-badge.error { background: #fef2f2; color: #DC2626; }
+.file-status-badge.analyzing { background: #f1f5f9; color: #64748b; }
 .file-remove-btn { font-size: 0.875rem; color: #DC2626; background: none; border: none; cursor: pointer; padding: 0; font-weight: 500; }
 .file-remove-btn:hover { text-decoration: underline; }
 .files-empty { text-align: center; color: #9ca3af; padding: 32px 16px; font-size: 0.875rem; }

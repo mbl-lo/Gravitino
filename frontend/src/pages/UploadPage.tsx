@@ -3,9 +3,70 @@ import { useNavigate } from 'react-router-dom';
 import { uploadDocuments } from '../services/api';
 import './UploadPage.css';
 
+type ImageQuality = 'excellent' | 'good' | 'low';
+
+const loadImage = (file: File): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { resolve(img); URL.revokeObjectURL(url); };
+    img.onerror = (e) => { reject(e); URL.revokeObjectURL(url); };
+    img.src = url;
+  });
+};
+
+// Резкость через вариацию Лапласиана (стандартная мера расфокуса) + разрешение исходника
+const analyzeImageQuality = async (file: File): Promise<ImageQuality> => {
+  const img = await loadImage(file);
+  const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+
+  const maxDim = 500;
+  const scale = Math.min(1, maxDim / longSide);
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return 'good';
+  ctx.drawImage(img, 0, 0, w, h);
+  const { data } = ctx.getImageData(0, 0, w, h);
+
+  const gray = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+  }
+
+  let sum = 0;
+  let sumSq = 0;
+  let count = 0;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      const laplacian = gray[idx - 1] + gray[idx + 1] + gray[idx - w] + gray[idx + w] - 4 * gray[idx];
+      sum += laplacian;
+      sumSq += laplacian * laplacian;
+      count++;
+    }
+  }
+  const mean = sum / count;
+  const sharpness = sumSq / count - mean * mean;
+
+  const isHighRes = longSide >= 1500;
+  const isMediumRes = longSide >= 800;
+  const isSharp = sharpness > 300;
+  const isMediumSharp = sharpness > 80;
+
+  if (isHighRes && isSharp) return 'excellent';
+  if ((isHighRes || isMediumRes) && isMediumSharp) return 'good';
+  return 'low';
+};
+
 const UploadPage = () => {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileQuality, setFileQuality] = useState<Map<File, ImageQuality>>(new Map());
   const [isDragover, setIsDragover] = useState(false);
   const [message, setMessage] = useState({ text: '', isError: false });
   const [isUploading, setIsUploading] = useState(false);
@@ -21,6 +82,14 @@ const UploadPage = () => {
     if (newFiles.length === 0) return;
     setSelectedFiles(prev => [...prev, ...newFiles]);
     setMessage({ text: '', isError: false });
+
+    newFiles
+      .filter(file => file.type.startsWith('image/') && file.type !== 'image/heic')
+      .forEach(file => {
+        analyzeImageQuality(file)
+          .then(quality => setFileQuality(prev => new Map(prev).set(file, quality)))
+          .catch(() => setFileQuality(prev => new Map(prev).set(file, 'good')));
+      });
   }, []);
 
   const removeFile = useCallback((index: number) => {
@@ -177,12 +246,11 @@ const UploadPage = () => {
               ) : (
                 selectedFiles.map((file, index) => {
                   const isImage = file.type.startsWith('image/');
-                  const sizeMB = file.size / (1024 * 1024);
-                  const quality = sizeMB < 2 ? 'excellent' : sizeMB < 3 ? 'good' : 'low';
-                  const qualityText = quality === 'excellent' ? 'Отличное' : quality === 'good' ? 'Хорошее' : 'Низкое качество';
                   const isPDF = file.type === 'application/pdf';
-                  const status = isPDF ? 'error' : quality === 'low' ? 'low-quality' : 'ready';
-                  const statusText = status === 'ready' ? 'Готов к обработке' : status === 'low-quality' ? 'Низкое качество' : 'Ошибка формата';
+                  const quality = isPDF ? null : fileQuality.get(file) ?? null;
+                  const qualityText = quality === 'excellent' ? 'Отличное' : quality === 'good' ? 'Хорошее' : quality === 'low' ? 'Низкое качество' : isPDF ? '-' : 'Анализ...';
+                  const status = isPDF ? 'error' : quality === 'low' ? 'low-quality' : quality === null ? 'analyzing' : 'ready';
+                  const statusText = status === 'ready' ? 'Готов к обработке' : status === 'low-quality' ? 'Низкое качество' : status === 'analyzing' ? 'Анализ...' : 'Ошибка формата';
 
                   return (
                     <tr key={`${file.name}-${index}`}>
