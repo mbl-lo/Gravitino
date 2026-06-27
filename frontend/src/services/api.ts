@@ -214,29 +214,29 @@ export interface TrainingDocument {
  * Получение статистики обучения
  */
 export const getTrainingStats = () => {
-  return api.get<TrainingStats>('/training/stats')
+  return api.get<TrainingStats>('/documents/training/statistics')
 }
 
 /**
  * Получение документа для разметки
  */
 export const getTrainingDocument = (documentId: string) => {
-  return api.get<TrainingDocument>(`/training/documents/${encodeURIComponent(documentId)}`)
+  return api.get<TrainingDocument>(`/documents/training/documents/${encodeURIComponent(documentId)}`)
 }
 
 /**
  * Получение списка документов для разметки
  */
 export const getTrainingDocuments = () => {
-  return api.get<TrainingDocument[]>('/training/documents')
+  return api.get<TrainingDocument[]>('/documents/training/documents')
 }
 
 /**
  * Сохранение размеченного поля
  * @param field - данные размеченного поля
  */
-export const saveLabeledField = (field: Omit<LabeledField, 'id' | 'labeledAt' | 'labeledBy'>) => {
-  return api.post<LabeledField>('/training/fields', field)
+export const saveLabeledField = (_field: Omit<LabeledField, 'id' | 'labeledAt' | 'labeledBy'>) => {
+  return Promise.reject(new Error('Backend endpoint for saving individual training fields is not implemented'))
 }
 
 /**
@@ -244,7 +244,7 @@ export const saveLabeledField = (field: Omit<LabeledField, 'id' | 'labeledAt' | 
  * @param documentId - ID документа
  */
 export const confirmTraining = (documentId: string) => {
-  return api.post(`/training/documents/${encodeURIComponent(documentId)}/confirm`)
+  return api.post(`/documents/training/documents/${encodeURIComponent(documentId)}/confirm-labeling`)
 }
 
 /**
@@ -252,14 +252,14 @@ export const confirmTraining = (documentId: string) => {
  * @param documentId - ID документа
  */
 export const addToTrainingSet = (documentId: string) => {
-  return api.post(`/training/documents/${encodeURIComponent(documentId)}/add-to-set`)
+  return api.post(`/documents/training/documents/${encodeURIComponent(documentId)}/add-to-training-set`)
 }
 
 /**
  * Запуск обучения модели
  */
 export const startTraining = () => {
-  return api.post('/training/start')
+  return Promise.reject(new Error('Backend endpoint for starting model training is not implemented'))
 }
 
 // --- НАСТРОЙКИ СИСТЕМЫ ---

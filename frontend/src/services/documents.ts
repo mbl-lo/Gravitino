@@ -12,6 +12,7 @@ export interface DocumentField {
 export interface Anomaly {
   type: string
   severity: string
+  status?: string
 }
 
 export interface Document {
