@@ -384,11 +384,10 @@ export class DocumentsService {
     });
 
     return {
-      totalFields,
       labeledFields,
-      unlabeledFields: totalFields - labeledFields,
-      documentsPendingLabeling,
-      lastTrainingDate: lastTrainingDateResult?.trainingSetAddedAt || null,
+      modelAccuracy: totalFields > 0 ? Math.round((labeledFields / totalFields) * 100) : 0,
+      needsLabeling: documentsPendingLabeling,
+      lastTraining: lastTrainingDateResult?.trainingSetAddedAt?.toISOString() || '',
     };
   }
 
@@ -410,7 +409,7 @@ export class DocumentsService {
     if (filters?.fromDate) where.createdAt = { gte: filters.fromDate };
     if (filters?.toDate) where.createdAt = { ...where.createdAt, lte: filters.toDate };
 
-    return this.prisma.document.findMany({
+    const documents = await this.prisma.document.findMany({
       where,
       include: {
         fields: true,
@@ -419,6 +418,8 @@ export class DocumentsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return documents.map((document) => this.toTrainingDocumentDto(document));
   }
 
   async getTrainingDocument(id: string) {
@@ -437,7 +438,55 @@ export class DocumentsService {
       throw new NotFoundException(`Документ с ID ${id} не найден`);
     }
 
-    return document;
+    return this.toTrainingDocumentDto(document);
+  }
+
+  private toTrainingDocumentDto(document: {
+    id: string;
+    documentNumber: string | null;
+    originalFileName: string;
+    fields: Array<{
+      id: string;
+      documentId: string;
+      fieldLabel: string;
+      recognizedValue: string | null;
+      correctedValue: string | null;
+      confidence: unknown;
+      updatedAt: Date;
+      isEdited: boolean;
+    }>;
+    uploadedBy?: { fullName: string } | null;
+  }) {
+    const fields = document.fields.map((field) => {
+      const confidence = this.toPercent(field.confidence);
+
+      return {
+        id: field.id,
+        documentId: field.documentId,
+        fieldType: field.fieldLabel,
+        ocrValue: field.recognizedValue ?? '',
+        correctValue: field.correctedValue ?? '',
+        confidence,
+        difficulty: confidence >= 90 ? 'easy' : confidence >= 70 ? 'medium' : 'hard',
+        labeledAt: field.isEdited || field.correctedValue ? field.updatedAt.toISOString() : '',
+        labeledBy: field.isEdited || field.correctedValue ? document.uploadedBy?.fullName ?? '' : '',
+      };
+    });
+
+    return {
+      id: document.id,
+      name: document.documentNumber ?? document.originalFileName,
+      fields,
+      totalFields: fields.length,
+      labeledFields: fields.filter((field) => field.correctValue).length,
+    };
+  }
+
+  private toPercent(value: unknown) {
+    if (value === null || value === undefined) return 0;
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) return 0;
+    return Math.round(numeric <= 1 ? numeric * 100 : numeric);
   }
 
   async confirmLabeling(id: string, userId: string) {
